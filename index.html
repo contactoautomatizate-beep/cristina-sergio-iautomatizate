@@ -100,7 +100,9 @@ h1,h2,h3{font-family:var(--serif);font-weight:500;margin:0;letter-spacing:.01em}
 .thumbs{display:flex;gap:6px}
 .thumbs img,.thumbs video{width:54px;height:54px;object-fit:cover;border-radius:10px;background:var(--beige)}
 .status{font-size:13px;font-weight:600}
-.up-btns{display:flex;gap:8px;flex-wrap:wrap}
+.up-btns{display:flex;gap:6px;flex-wrap:wrap}
+.up-btns .btn{padding:9px 12px;gap:5px}
+@media (max-width:400px){.reto{grid-template-columns:26px 1fr;gap:4px 10px;padding:14px}.reto .foot{grid-column:1/-1}}
 .thumbs .th{position:relative;display:inline-block}
 .thumbs .del{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:0;background:var(--ink);color:#fff;font-size:13px;line-height:22px;padding:0}
 .preview{width:54px;height:54px;object-fit:cover;border-radius:10px;opacity:.6}
@@ -228,47 +230,47 @@ const MESAS = {
 };
 const RETOS = {
  1:[
-  "Dale la bienvenida a la familia a Sergio bailando 20 segundos con él (vídeo).",
-  "Graba a Sergio contando qué es lo que más le gusta de la familia de Cristina.",
-  "Haz un brindis con un padrino (foto).",
+  "Haz un brindis con un padrino y sube la foto.",
   "Encuentra a la persona de la familia del novio que ha venido desde más lejos y hazte una foto con ella.",
-  "Hazte un selfie con alguien de la familia de Sergio que no conocías y escribe su nombre.",
+  "Hazte un selfie con alguien de la familia de Sergio a quien no conocías de antes.",
   "Hazte una foto con un camarero o camarera.",
-  "Graba un vídeo de 15 segundos contando una anécdota divertida de Cristina que Sergio no conozca.",
   "Dibuja a los novios en una servilleta y sube la foto.",
+  "Graba un vídeo de 15 segundos contando una anécdota divertida de Cristina que Sergio no conozca.",
+  "Con los novios: saca a bailar a Sergio 20 segundos para darle la bienvenida a la familia (vídeo).",
+  "Con los novios: pregúntale a Sergio qué es lo que más le gusta de la familia de Cristina y graba su respuesta.",
   "Foto de toda la mesa haciendo un corazón con las manos.",
   "Foto de toda la mesa junto a la familia del novio: las dos familias en una sola foto."],
  2:[
-  "Dale la bienvenida a la familia a Cristina bailando 20 segundos con ella (vídeo).",
-  "Graba a Cristina contando qué es lo que más le gusta de la familia de Sergio.",
-  "Haz un brindis con una madrina (foto).",
+  "Haz un brindis con una madrina y sube la foto.",
   "Encuentra a quien conoce a Cristina desde hace más años y hazte una foto con esa persona.",
-  "Hazte un selfie con alguien de la familia de Cristina que no conocías y escribe su nombre.",
+  "Hazte un selfie con alguien de la familia de Cristina a quien no conocías de antes.",
   "Hazte una foto haciéndole una foto al fotógrafo.",
-  "Graba un vídeo de 15 segundos contando una anécdota divertida de Sergio que Cristina no conozca.",
   "Dibuja la boda en 3 trazos en una servilleta y sube la foto.",
+  "Graba un vídeo de 15 segundos contando una anécdota divertida de Sergio que Cristina no conozca.",
+  "Con los novios: saca a bailar a Cristina 20 segundos para darle la bienvenida a la familia (vídeo).",
+  "Con los novios: pregúntale a Cristina qué es lo que más le gusta de la familia de Sergio y graba su respuesta.",
   "Foto de toda la mesa imitando una foto antigua de familia, todos muy serios.",
   "Vídeo de toda la mesa haciendo la ola."],
  3:[
-  "Enséñale a Cristina un baile de moda y grábalo.",
-  "Pregunta a los novios qué significan 3 palabras que usan los jóvenes y graba sus respuestas.",
-  "Hazte una foto imitando la pose de un padrino.",
+  "Hazte una foto junto a un padrino copiando su pose.",
   "Encuentra a la persona más mayor de la boda y hazte una foto con ella.",
-  "Hazte un selfie con 3 personas en la misma foto, una de cada otra mesa.",
+  "Hazte un selfie con 3 personas en la misma foto, una de cada una de las otras mesas.",
   "Hazte una foto con el DJ.",
   "Consigue que el DJ ponga una canción de verbena y saca a bailar a alguien de la familia (vídeo).",
   "Escribe una dedicatoria para los novios en una servilleta y sube la foto.",
+  "Con los novios: enséñale a Cristina un baile de moda y graba cómo lo baila.",
+  "Con los novios: pregúntales qué significan 3 palabras que usan los jóvenes (por ejemplo, «cringe») y graba sus respuestas.",
   "Foto de toda la mesa posando como un grupo de música de los 80.",
   "Vídeo de toda la mesa bailando en la pista con al menos una persona de otra mesa."],
  4:[
-  "Enséñale un paso de baile a Sergio y grábalo.",
-  "Graba a los novios contando dónde fue su primera cita.",
-  "Hazte una foto imitando la pose de una madrina.",
+  "Hazte una foto junto a una madrina copiando su pose.",
   "Encuentra a quien conoce a Sergio desde hace más años y hazte una foto con esa persona.",
   "Consigue una servilleta con una dedicatoria escrita por alguien de una de las dos familias.",
   "Hazte una foto con alguien del personal de cocina o sala.",
-  "Graba un vídeo de 15 segundos con una predicción para los novios dentro de 20 años.",
   "Dibuja a los padrinos en una servilleta y sube la foto.",
+  "Graba un vídeo de 15 segundos con una predicción para los novios dentro de 20 años.",
+  "Con los novios: enséñale a Sergio un paso de baile y grabad cómo lo bailáis juntos.",
+  "Con los novios: pregúntales dónde fue su primera cita y graba su respuesta.",
   "Foto de toda la mesa con disfraces improvisados hechos con servilletas.",
   "Vídeo de toda la mesa coreando un nombre de pareja inventado para los novios."]
 };
@@ -525,7 +527,7 @@ function vistaRetos(){
   const fin = {id:`m${m}-final`, texto:RETO_FINAL, tipo:"final"};
   return `
     ${S.finalAbierto ? `<h2 class="section-title">Reto final de toda la boda</h2>${tarjetaReto(fin,true)}` : ""}
-    <div class="notice">Ya sois <b>${apuntados}</b> apuntados en la mesa y hay <b>10 retos</b>. Cada uno hace <b>mínimo un reto individual</b>, y los de mesa los hacéis todos juntos. Vosotros decidís quién hace qué.</div>
+    <div class="notice">${apuntados===1?"De momento hay <b>1</b> apuntado":`Ya sois <b>${apuntados}</b> apuntados`} en la mesa y hay <b>10 retos</b>. Cada uno hace <b>mínimo un reto individual</b>, y los de mesa los hacéis todos juntos. Vosotros decidís quién hace qué.<br>Los retos <b>con los novios</b> están al final: hacedlos cuando estén libres, sin interrumpir la comida.</div>
     <div class="progress-line">${hechos} de ${tot} retos cumplidos</div>
     <div class="bar"><i style="width:${Math.round(hechos/tot*100)}%"></i></div>
     <h2 class="section-title">Individuales</h2>
