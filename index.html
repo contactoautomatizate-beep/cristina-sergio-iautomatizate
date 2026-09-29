@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cristina &amp; Sergio · Retos de la boda</title>
+<meta name="theme-color" content="#FBF8F3">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💍</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Mulish:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{
+  --paper:#FBF8F3; --white:#FFFFFF; --beige:#EDE3D3; --beige-2:#E2D5C0;
+  --gold:#B08D52; --gold-soft:#D9C49B; --ink:#3B332A; --ink-2:#6E6254;
+  --sage:#9AA58B; --blush:#E7CFC3; --ok:#6F8B5E; --err:#A6533F;
+  --serif:"Cormorant Garamond", "Iowan Old Style", Georgia, serif;
+  --sans:"Mulish", system-ui, -apple-system, "Segoe UI", sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:inherit}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+/* Flores laterales */
+.vine{position:fixed;top:0;bottom:0;width:64px;pointer-events:none;z-index:0;opacity:.9}
+.vine svg{width:100%;height:100%}
+.vine.l{left:0}
+.vine.r{right:0;transform:scaleX(-1)}
+@media (max-width:520px){.vine{width:34px;opacity:.75}}
+
+main{position:relative;z-index:1;max-width:560px;margin:0 auto;padding:0 44px 40px}
+@media (max-width:520px){main{padding:0 36px 32px}}
+
+h1,h2,h3{font-family:var(--serif);font-weight:500;margin:0;letter-spacing:.01em}
+.names{font-family:var(--serif);font-style:italic;font-weight:400;font-size:clamp(44px,12vw,64px);line-height:1;text-align:center;color:var(--ink)}
+.names .amp{color:var(--gold);font-size:.7em;margin:0 .12em;vertical-align:.08em}
+.date{text-align:center;color:var(--ink-2);font-family:var(--serif);font-size:19px;margin-top:10px}
+
+/* Bienvenida */
+.welcome{padding-top:36px;text-align:center}
+.couple{width:210px;max-width:70%;margin:6px auto 4px;display:block}
+.lede{font-family:var(--serif);font-size:21px;line-height:1.45;margin:22px 0 0;color:var(--ink)}
+.rules{list-style:none;padding:0;margin:22px 0 28px;text-align:left;border-top:1px solid var(--beige-2)}
+.rules li{padding:12px 2px;border-bottom:1px solid var(--beige-2);color:var(--ink-2);font-size:15px}
+.rules b{color:var(--ink);font-weight:600}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:999px;background:var(--ink);color:var(--paper);padding:14px 28px;font-weight:600;font-size:16px;min-height:48px}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--beige-2)}
+.btn.gold{background:var(--gold);color:#fff}
+.btn.sm{padding:9px 16px;min-height:38px;font-size:14px}
+.btn.block{width:100%}
+
+/* Formulario nombre */
+.ask{padding-top:48px}
+.ask h2{font-size:34px;line-height:1.15;text-align:center}
+.ask p{text-align:center;color:var(--ink-2);margin:10px 0 24px}
+.field{width:100%;border:0;border-bottom:1.5px solid var(--beige-2);background:transparent;padding:12px 2px;font-family:var(--serif);font-size:26px;text-align:center;outline:none;border-radius:0}
+.field:focus{border-bottom-color:var(--gold)}
+.hint{font-size:13px;color:var(--ink-2);text-align:center;margin-top:8px}
+.ask .btn{margin-top:30px}
+
+/* Cabecera juego */
+.top{padding:22px 0 8px;text-align:center}
+.top .names{font-size:40px}
+.me{font-size:14px;color:var(--ink-2);margin-top:6px}
+.me b{color:var(--ink);font-weight:600}
+
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;gap:4px;background:var(--paper);padding:10px 0 12px;margin-bottom:4px;border-bottom:1px solid var(--beige-2)}
+.tabs button{flex:1;border:0;background:transparent;padding:9px 4px;border-radius:999px;font-weight:600;font-size:14px;color:var(--ink-2)}
+.tabs button[aria-selected="true"]{background:var(--beige);color:var(--ink)}
+
+.notice{background:var(--white);border:1px solid var(--beige-2);border-radius:14px;padding:14px 16px;margin:14px 0 18px;font-size:14px;color:var(--ink-2)}
+.notice b{color:var(--ink)}
+
+.section-title{font-family:var(--serif);font-size:24px;margin:22px 0 10px}
+.progress-line{font-size:14px;color:var(--ink-2);margin-bottom:6px}
+.bar{height:6px;background:var(--beige);border-radius:9px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--gold);border-radius:9px;transition:width .6s ease}
+
+/* Retos */
+.reto{background:var(--white);border:1px solid var(--beige-2);border-radius:16px;padding:16px;margin-bottom:12px;display:grid;grid-template-columns:30px 1fr;gap:4px 12px}
+.reto .n{font-family:var(--serif);font-size:24px;color:var(--gold);line-height:1.1;text-align:center}
+.reto .t{font-size:15.5px;line-height:1.45}
+.reto .foot{grid-column:2;display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px}
+.reto .who{font-size:13px;color:var(--ink-2)}
+.reto .who b{color:var(--ink)}
+.reto.done{background:#F7F3EC}
+.reto.done .n{color:var(--ok)}
+.reto.final{border:1.5px solid var(--gold);background:linear-gradient(#fff,#FBF6EC)}
+.chip{font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--beige);color:var(--ink-2)}
+.chip.ok{background:#E3EAD9;color:#4E6640}
+.thumbs{display:flex;gap:6px}
+.thumbs img,.thumbs video{width:54px;height:54px;object-fit:cover;border-radius:10px;background:var(--beige)}
+.status{font-size:13px;font-weight:600}
+.status.up{color:var(--gold)}
+.status.ok{color:var(--ok)}
+.status.err{color:var(--err)}
+
+/* Ranking */
+.rank-row{padding:14px 0;border-bottom:1px solid var(--beige-2)}
+.rank-row .h{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:8px}
+.rank-row .nm{font-family:var(--serif);font-size:22px}
+.rank-row .sc{font-weight:700;font-size:15px}
+.rank-row.mine .nm::after{content:" (vosotros)";font-family:var(--sans);font-size:13px;color:var(--ink-2)}
+.rank-row .bar{height:10px}
+.prizes{margin-top:22px;font-size:14px;color:var(--ink-2)}
+.prizes p{margin:0 0 10px}
+.prizes b{color:var(--ink)}
+
+/* Galería */
+.hearts-left{font-size:14px;color:var(--ink-2);margin:14px 0}
+.hearts-left b{color:var(--ink)}
+.photo{background:var(--white);border:1px solid var(--beige-2);border-radius:16px;overflow:hidden;margin-bottom:16px}
+.photo .media{background:var(--beige);display:block;width:100%;max-height:520px;object-fit:cover}
+.photo .cap{padding:12px 14px 14px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:start}
+.photo .by{font-weight:600;font-size:15px}
+.photo .rel{font-size:13px;color:var(--ink-2)}
+.photo .rt{grid-column:1/-1;font-family:var(--serif);font-style:italic;font-size:17px;color:var(--ink-2);line-height:1.35}
+.heart{border:1px solid var(--beige-2);background:var(--paper);border-radius:999px;padding:7px 12px;font-weight:700;font-size:14px;display:inline-flex;gap:6px;align-items:center;min-height:38px}
+.heart svg{width:18px;height:18px}
+.heart.on{background:#F6E4DD;border-color:var(--blush);color:#9B4A3A}
+.heart:disabled{opacity:.55;cursor:default}
+.empty{text-align:center;color:var(--ink-2);padding:40px 10px;font-family:var(--serif);font-size:20px}
+
+footer{position:relative;z-index:1;text-align:center;padding:26px 44px calc(28px + env(safe-area-inset-bottom,0px));font-size:13px;color:var(--ink-2);border-top:1px solid var(--beige-2);max-width:560px;margin:10px auto 0}
+footer b{color:var(--ink)}
+footer a{color:var(--gold);font-weight:700;text-decoration:none}
+
+.toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--paper);padding:12px 18px;border-radius:999px;font-size:14px;font-weight:600;opacity:0;transition:.25s;z-index:20;max-width:88vw;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* Admin */
+.admin h2{font-size:30px;margin:24px 0 6px}
+.admin .row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.admin .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.admin .cell{background:#fff;border:1px solid var(--beige-2);border-radius:12px;overflow:hidden;font-size:12px}
+.admin .cell .media{width:100%;height:120px;object-fit:cover;display:block;background:var(--beige)}
+.admin .cell .i{padding:8px}
+.admin .cell.off{opacity:.45}
+.admin .claim{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--beige-2);font-size:14px}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* Intro: dibujo a mano alzada + acuarela + baile */
+.intro .couple{width:270px;max-width:80%;margin:4px auto 0;display:block}
+.couple .ln path{stroke-dasharray:1;stroke-dashoffset:1;opacity:0;animation:draw var(--t) cubic-bezier(.45,.05,.55,.95) forwards;animation-delay:var(--d)}
+@keyframes draw{from{opacity:1;stroke-dashoffset:1}to{opacity:1;stroke-dashoffset:0}}
+.couple .wash{opacity:0;animation:wash 1.4s ease forwards 4.2s}
+@keyframes wash{to{opacity:1}}
+.couple .dance{transform-box:view-box;transform-origin:170px 300px;animation:sway 3.4s ease-in-out 5.4s infinite}
+@keyframes sway{0%,100%{transform:rotate(0) translateY(0)}25%{transform:rotate(-3deg) translateY(-3px)}50%{transform:rotate(0) translateY(0)}75%{transform:rotate(3deg) translateY(-3px)}}
+.rv{opacity:0;transform:translateY(8px);animation:rv .8s ease forwards;animation-delay:var(--r)}
+@keyframes rv{to{opacity:1;transform:none}}
+.hook{font-family:"Cormorant Garamond",Georgia,serif;font-size:1.55rem;line-height:1.25;color:var(--ink,#3d3326);margin:14px 0 6px}
+.btn.go{font-size:1.1rem;animation:beat 1.8s ease-in-out 6s infinite}
+@keyframes beat{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+/* tocar la pantalla salta la animación */
+.intro.skip .ln path{animation-delay:0s;animation-duration:.25s}
+.intro.skip .wash{animation-delay:.2s;animation-duration:.4s}
+.intro.skip .rv{animation-delay:.3s}
+@media (prefers-reduced-motion:reduce){
+  .couple .ln path{animation:none;stroke-dashoffset:0;opacity:1}
+  .couple .wash{animation:none;opacity:1}
+  .couple .dance,.btn.go{animation:none}
+  .rv{animation:none;opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+
+<div class="vine l" aria-hidden="true"><svg viewBox="0 0 64 800" preserveAspectRatio="xMinYMin slice"><use href="#vine"/></svg></div>
+<div class="vine r" aria-hidden="true"><svg viewBox="0 0 64 800" preserveAspectRatio="xMinYMin slice"><use href="#vine"/></svg></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <g id="flower">
+      <circle cx="0" cy="-6" r="5.2" fill="#F1DDD3"/><circle cx="5.7" cy="-1.9" r="5.2" fill="#EBD2C6"/>
+      <circle cx="3.5" cy="4.9" r="5.2" fill="#F1DDD3"/><circle cx="-3.5" cy="4.9" r="5.2" fill="#EBD2C6"/>
+      <circle cx="-5.7" cy="-1.9" r="5.2" fill="#F1DDD3"/><circle r="2.6" fill="#D2B57A"/>
+    </g>
+    <g id="bud"><circle r="3.4" fill="#E9D6CB"/><circle r="1.3" fill="#D2B57A"/></g>
+    <ellipse id="leaf" rx="9" ry="3.6" fill="#B7BFA6"/>
+    <g id="vine">
+      <path d="M18 -10 C 34 60, 4 120, 20 190 S 36 320, 16 400 S 6 540, 22 620 S 34 740, 14 820" fill="none" stroke="#C8CDB8" stroke-width="1.6"/>
+      <use href="#leaf" transform="translate(30 40) rotate(-35)"/><use href="#leaf" transform="translate(10 95) rotate(30)"/>
+      <use href="#flower" transform="translate(22 140) scale(1.25)"/>
+      <use href="#leaf" transform="translate(33 205) rotate(-25)"/><use href="#bud" transform="translate(9 250)"/>
+      <use href="#leaf" transform="translate(12 300) rotate(35)"/><use href="#flower" transform="translate(28 355)"/>
+      <use href="#leaf" transform="translate(8 430) rotate(25)"/><use href="#bud" transform="translate(30 470)"/>
+      <use href="#flower" transform="translate(12 520) scale(1.1)"/><use href="#leaf" transform="translate(32 580) rotate(-30)"/>
+      <use href="#leaf" transform="translate(12 655) rotate(30)"/><use href="#flower" transform="translate(26 700) scale(1.2)"/>
+      <use href="#bud" transform="translate(10 770)"/>
+    </g>
+  </defs>
+</svg>
+
+<main id="app"></main>
+
+<footer>
+  Hecho con cariño por <b>iAutomatízate</b>.<br>
+  ¿Quieres algo así para tu evento o tu negocio? <a href="https://wa.me/34644155251" target="_blank" rel="noopener">644 155 251</a>
+</footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ============ CONFIG ============ */
+const SUPA_URL = "https://rwmyacoxmggaznqicmrz.supabase.co";
+const SUPA_KEY = "sb_publishable_NnO2baw9k9HVeHExDzuCww_gQi7okLH";
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+const BUCKET = "fotos";
+const MAX_HEARTS = 3;
+
+const MESAS = {
+  1:"Familia de la novia", 2:"Familia del novio", 3:"La juventud", 4:"Amigos de los novios"
+};
+const RETOS = {
+ 1:[
+  "Dale la bienvenida a la familia a Sergio bailando 20 segundos con él (vídeo).",
+  "Graba a Sergio contando qué es lo que más le gusta de la familia de Cristina.",
+  "Haz un brindis con un padrino (foto).",
+  "Encuentra a la persona de la familia del novio que ha venido desde más lejos y hazte una foto con ella.",
+  "Hazte un selfie con alguien de la familia de Sergio que no conocías y escribe su nombre.",
+  "Hazte una foto con un camarero o camarera.",
+  "Graba un vídeo de 15 segundos contando una anécdota divertida de Cristina que Sergio no conozca.",
+  "Dibuja a los novios en una servilleta y sube la foto.",
+  "Foto de toda la mesa haciendo un corazón con las manos.",
+  "Foto de toda la mesa junto a la familia del novio: las dos familias en una sola foto."],
+ 2:[
+  "Dale la bienvenida a la familia a Cristina bailando 20 segundos con ella (vídeo).",
+  "Graba a Cristina contando qué es lo que más le gusta de la familia de Sergio.",
+  "Haz un brindis con una madrina (foto).",
+  "Encuentra a quien conoce a Cristina desde hace más años y hazte una foto con esa persona.",
+  "Hazte un selfie con alguien de la familia de Cristina que no conocías y escribe su nombre.",
+  "Hazte una foto haciéndole una foto al fotógrafo.",
+  "Graba un vídeo de 15 segundos contando una anécdota divertida de Sergio que Cristina no conozca.",
+  "Dibuja la boda en 3 trazos en una servilleta y sube la foto.",
+  "Foto de toda la mesa imitando una foto antigua de familia, todos muy serios.",
+  "Vídeo de toda la mesa haciendo la ola."],
+ 3:[
+  "Enséñale a Cristina un baile de moda y grábalo.",
+  "Pregunta a los novios qué significan 3 palabras que usan los jóvenes y graba sus respuestas.",
+  "Hazte una foto imitando la pose de un padrino.",
+  "Encuentra a la persona más mayor de la boda y hazte una foto con ella.",
+  "Hazte un selfie con 3 personas en la misma foto, una de cada otra mesa.",
+  "Hazte una foto con el DJ.",
+  "Consigue que el DJ ponga una canción de verbena y saca a bailar a alguien de la familia (vídeo).",
+  "Escribe una dedicatoria para los novios en una servilleta y sube la foto.",
+  "Foto de toda la mesa posando como un grupo de música de los 80.",
+  "Vídeo de toda la mesa bailando en la pista con al menos una persona de otra mesa."],
+ 4:[
+  "Enséñale un paso de baile a Sergio y grábalo.",
+  "Graba a los novios contando dónde fue su primera cita.",
+  "Hazte una foto imitando la pose de una madrina.",
+  "Encuentra a quien conoce a Sergio desde hace más años y hazte una foto con esa persona.",
+  "Consigue una servilleta con una dedicatoria escrita por alguien de una de las dos familias.",
+  "Hazte una foto con alguien del personal de cocina o sala.",
+  "Graba un vídeo de 15 segundos con una predicción para los novios dentro de 20 años.",
+  "Dibuja a los padrinos en una servilleta y sube la foto.",
+  "Foto de toda la mesa con disfraces improvisados hechos con servilletas.",
+  "Vídeo de toda la mesa coreando un nombre de pareja inventado para los novios."]
+};
+const RETO_FINAL = "Foto de todos los invitados juntos con los novios en el centro, y después un grito conjunto de «¡Vivan los novios!» grabado en vídeo.";
+
+function retosDe(m){
+  return RETOS[m].map((t,i)=>({id:`m${m}-${i+1}`, n:i+1, texto:t, tipo: i>=8 ? "mesa":"individual"}));
+}
+function textoReto(id){
+  const [m,n] = id.slice(1).split("-");
+  if(n==="final") return RETO_FINAL;
+  return RETOS[m]?.[Number(n)-1] || "";
+}
+
+/* ============ ESTADO ============ */
+const params = new URLSearchParams(location.search);
+const isAdmin = params.has("admin");
+let mesaURL = Number(params.get("mesa")) || 0;
+let yo = JSON.parse(localStorage.getItem("boda_cs_jugador") || "null");
+let tab = "retos";
+const S = { jugadores:{}, reclamos:{}, pruebas:[], votos:[], finalAbierto:false, loaded:false };
+const subiendo = {}; // reto_id -> {estado, msg}
+
+/* ============ UTILIDADES ============ */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),2800); }
+const fotoURL = p => sb.storage.from(BUCKET).getPublicUrl(p).data.publicUrl;
+const pruebasValidas = () => S.pruebas.filter(p=>!p.anulada);
+function completados(m){
+  const ids = new Set(pruebasValidas().filter(p=>p.mesa===m).map(p=>p.reto_id));
+  return ids.size;
+}
+const totalRetos = () => 10 + (S.finalAbierto ? 1 : 0);
+const misVotos = () => yo ? S.votos.filter(v=>v.jugador_id===yo.id) : [];
+const votosDe = id => S.votos.filter(v=>v.prueba_id===id).length;
+const mediaTag = (p, cls="media") => p.es_video
+  ? `<video class="${cls}" src="${fotoURL(p.foto_path)}#t=0.1" preload="metadata" controls playsinline></video>`
+  : `<img class="${cls}" src="${fotoURL(p.foto_path)}" alt="" loading="lazy">`;
+
+/* ============ DATOS ============ */
+async function cargar(tabla){
+  if(tabla==="jugadores"||!tabla){ const {data}=await sb.from("jugadores").select("*"); if(data){S.jugadores={}; data.forEach(j=>S.jugadores[j.id]=j);} }
+  if(tabla==="reclamos"||!tabla){ const {data}=await sb.from("reclamos").select("*"); if(data){S.reclamos={}; data.forEach(r=>S.reclamos[r.reto_id]=r);} }
+  if(tabla==="pruebas"||!tabla){ const {data}=await sb.from("pruebas").select("*").order("created_at",{ascending:false}); if(data) S.pruebas=data; }
+  if(tabla==="votos"||!tabla){ const {data}=await sb.from("votos").select("*"); if(data) S.votos=data; }
+  if(tabla==="config"||!tabla){ const {data}=await sb.from("config").select("*"); if(data){ const f=data.find(c=>c.clave==="reto_final_abierto"); S.finalAbierto = f?.valor==="true"; } }
+  S.loaded = true;
+}
+const pend = new Set(); let tmr;
+function refrescar(tabla){
+  pend.add(tabla); clearTimeout(tmr);
+  tmr = setTimeout(async ()=>{ const ts=[...pend]; pend.clear(); await Promise.all(ts.map(cargar)); if(ts.includes("pruebas")) await cargar("jugadores"); render(); }, 250);
+}
+function suscribir(){
+  const ch = sb.channel("boda");
+  ["jugadores","reclamos","pruebas","votos","config"].forEach(t=>{
+    ch.on("postgres_changes",{event:"*",schema:"public",table:t},()=>refrescar(t));
+  });
+  ch.subscribe();
+  setInterval(async ()=>{ await cargar(); render(); }, 25000); // red de seguridad
+}
+
+/* ============ SUBIDA ============ */
+async function comprimir(file){
+  if(!file.type.startsWith("image/")) return file;
+  try{
+    const bmp = await createImageBitmap(file, {imageOrientation:"from-image"});
+    const max = 1600, k = Math.min(1, max/Math.max(bmp.width,bmp.height));
+    const c = document.createElement("canvas"); c.width=Math.round(bmp.width*k); c.height=Math.round(bmp.height*k);
+    c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);
+    const blob = await new Promise(r=>c.toBlob(r,"image/jpeg",0.82));
+    return blob || file;
+  }catch(e){ return file; }
+}
+async function subirPrueba(retoId, file){
+  if(!file) return;
+  const esVideo = file.type.startsWith("video/");
+  if(esVideo && file.size > 50*1024*1024){ toast("El vídeo pesa demasiado. Grábalo de menos de 20 segundos."); return; }
+  const m = Number(retoId.slice(1).split("-")[0]);
+  subiendo[retoId] = {estado:"up", msg:"Subiendo…"}; render();
+  const cuerpo = await comprimir(file);
+  const ext = esVideo ? (file.name.split(".").pop()||"mp4").toLowerCase() : "jpg";
+  const path = `mesa${m}/${retoId}_${Date.now()}_${Math.random().toString(36).slice(2,7)}.${ext}`;
+  let ok=false, err;
+  for(let i=0;i<3 && !ok;i++){
+    const {error} = await sb.storage.from(BUCKET).upload(path, cuerpo, {contentType: esVideo ? file.type : "image/jpeg", upsert:true});
+    if(!error) ok=true; else { err=error; subiendo[retoId]={estado:"up",msg:`Reintentando (${i+2}/3)…`}; render(); await new Promise(r=>setTimeout(r,1500*(i+1))); }
+  }
+  if(ok){
+    const {error} = await sb.from("pruebas").insert({reto_id:retoId, mesa:m, jugador_id:yo.id, foto_path:path, es_video:esVideo});
+    if(error){ ok=false; err=error; }
+  }
+  if(ok){ subiendo[retoId]={estado:"ok",msg:"¡Listo! Ya está en la galería"}; toast("¡Reto cumplido! 🎉"); refrescar("pruebas"); setTimeout(()=>{delete subiendo[retoId]; render();},4000); }
+  else { subiendo[retoId]={estado:"err",msg:"No se ha podido subir. Comprueba el wifi y vuelve a intentarlo."}; console.error(err); }
+  render();
+}
+function elegirArchivo(retoId){
+  const inp = document.createElement("input");
+  inp.type="file"; inp.accept="image/*,video/*";
+  inp.onchange = () => subirPrueba(retoId, inp.files[0]);
+  inp.click();
+}
+async function pedirReto(retoId){
+  const m = Number(retoId.slice(1).split("-")[0]);
+  const {error} = await sb.from("reclamos").insert({reto_id:retoId, mesa:m, jugador_id:yo.id});
+  if(error){ await cargar("reclamos"); await cargar("jugadores"); const r=S.reclamos[retoId]; toast(r ? `Se lo ha pedido ${S.jugadores[r.jugador_id]?.nombre||"otra persona"}` : "No se ha podido, inténtalo otra vez"); }
+  else toast("¡Es tuyo! Cuando lo hagas, sube la prueba");
+  refrescar("reclamos");
+}
+async function votar(pruebaId){
+  const {error} = await sb.from("votos").insert({jugador_id:yo.id, prueba_id:pruebaId});
+  if(error){
+    const msg = error.message||"";
+    toast(msg.includes("propia mesa") ? "No puedes votar a tu propia mesa" : msg.includes("3 corazones") ? "Ya has usado tus 3 corazones" : msg.includes("duplicate") ? "Ya le has dado tu corazón" : "No se ha podido votar");
+  } else toast("❤ Corazón enviado");
+  refrescar("votos");
+}
+
+/* ============ VISTAS ============ */
+const COUPLE_SVG = `
+<svg class="couple" viewBox="0 0 270 316" role="img" aria-label="Cristina y Sergio bailando">
+  <defs><filter id="aq" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="7"/><feDisplacementMap in="SourceGraphic" scale="7"/><feGaussianBlur stdDeviation=".6"/></filter></defs>
+  <g class="dance">
+    <g class="wash" filter="url(#aq)">
+      <path d="M146.0 40.0 C143.7 36.3 133.7 42.7 126.0 48.0 C118.3 53.3 109.3 61.3 100.0 72.0 C90.7 82.7 79.3 99.0 70.0 112.0 C60.7 125.0 50.7 139.3 44.0 150.0 C37.3 160.7 25.7 174.7 30.0 176.0 C34.3 177.3 58.7 165.0 70.0 158.0 C81.3 151.0 89.0 141.3 98.0 134.0 C107.0 126.7 117.3 120.0 124.0 114.0 C130.7 108.0 135.3 105.3 138.0 98.0 C140.7 90.7 138.7 79.7 140.0 70.0 C141.3 60.3 148.3 43.7 146.0 40.0" fill="#F2E9DD" opacity=".75" transform="translate(3 -2)"/>
+      <path d="M142.0 134.0 C140.2 142.7 131.3 152.3 124.0 164.0 C116.7 175.7 107.3 191.0 98.0 204.0 C88.7 217.0 77.7 231.0 68.0 242.0 C58.3 253.0 47.3 262.3 40.0 270.0 C32.7 277.7 17.3 282.7 24.0 288.0 C30.7 293.3 60.7 299.2 80.0 302.0 C99.3 304.8 121.3 306.0 140.0 305.0 C158.7 304.0 185.0 308.2 192.0 296.0 C199.0 283.8 185.7 252.7 182.0 232.0 C178.3 211.3 174.0 188.7 170.0 172.0 C166.0 155.3 159.0 142.7 158.0 132.0 C157.0 121.3 163.7 114.3 164.0 108.0 C164.3 101.7 162.3 98.3 160.0 94.0 C157.7 89.7 153.0 84.3 150.0 82.0 C147.0 79.7 144.7 78.7 142.0 80.0 C139.3 81.3 135.2 84.7 134.0 90.0 C132.8 95.3 133.7 104.7 135.0 112.0 C136.3 119.3 143.8 125.3 142.0 134.0" fill="#F4E4DA" transform="translate(4 -3)"/>
+      <path d="M203.0 86.2 C209.4 86.9 217.2 87.2 221.3 91.4 C225.3 95.5 226.4 101.5 227.1 111.1 C227.9 120.8 226.1 138.2 225.8 149.2 C225.4 160.2 224.9 163.6 225.0 177.3 C225.1 191.0 225.9 212.6 226.4 231.3 C226.8 249.9 231.0 287.5 227.9 289.3 C224.8 291.1 213.7 242.2 207.8 242.1 C202.0 242.0 195.4 290.3 192.8 288.8 C190.3 287.2 192.5 250.9 192.4 232.8 C192.3 214.6 192.5 193.4 192.1 179.7 C191.7 166.1 191.2 162.2 189.8 150.8 C188.5 139.3 185.2 121.6 184.1 111.0 C182.9 100.4 179.9 91.2 183.0 87.0 C186.2 82.9 196.6 85.4 203.0 86.2" fill="#B9A386" opacity=".55" transform="translate(0 -2)"/>
+      <path d="M162.0 36.0 C161.3 33.5 156.0 28.2 152.0 27.0 C148.0 25.8 142.3 26.5 138.0 29.0 C133.7 31.5 128.7 37.2 126.0 42.0 C123.3 46.8 122.3 52.7 122.0 58.0 C121.7 63.3 123.3 68.7 124.0 74.0 C124.7 79.3 126.3 85.0 126.0 90.0 C125.7 95.0 120.3 102.0 122.0 104.0 C123.7 106.0 132.7 105.0 136.0 102.0 C139.3 99.0 141.0 92.0 142.0 86.0 C143.0 80.0 141.3 72.3 142.0 66.0 C142.7 59.7 143.7 52.0 146.0 48.0 C148.3 44.0 153.3 44.0 156.0 42.0 C158.7 40.0 162.7 38.5 162.0 36.0" fill="#E3C27F" opacity=".9" transform="translate(2 -2)"/>
+    </g>
+    <g class="ln" fill="none" stroke="#6B5433" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path pathLength="1" style="--d:0.00s;--t:0.18s" d="M140.0 46.0 C141.7 44.8 146.5 39.3 150.0 39.0 C153.5 38.7 158.7 42.0 161.0 44.0 C163.3 46.0 162.8 48.7 164.0 51.0 C165.2 53.3 168.0 56.3 168.0 58.0 C168.0 59.7 164.3 60.0 164.0 61.0 C163.7 62.0 166.5 62.7 166.0 64.0 C165.5 65.3 163.0 67.7 161.0 69.0 C159.0 70.3 156.3 72.0 154.0 72.0 C151.7 72.0 148.2 69.5 147.0 69.0"/>
+      <path pathLength="1" style="--d:0.17s;--t:0.58s" d="M167.0 40.0 C166.7 39.3 166.2 37.0 165.2 35.8 C164.3 34.7 162.7 33.6 161.2 33.1 C159.8 32.6 157.9 32.4 156.4 32.7 C155.0 32.9 153.4 33.7 152.4 34.6 C151.5 35.5 150.8 36.8 150.6 38.0 C150.5 39.1 150.8 40.4 151.5 41.3 C152.2 42.2 153.4 43.0 154.6 43.2 C155.7 43.5 157.3 43.3 158.4 42.8 C159.6 42.3 160.8 41.2 161.5 40.1 C162.2 38.9 162.5 37.3 162.4 35.9 C162.2 34.5 161.5 32.9 160.6 31.7 C159.6 30.6 158.0 29.5 156.6 29.0 C155.1 28.5 153.2 28.4 151.8 28.6 C150.3 28.9 148.7 29.6 147.8 30.5 C146.8 31.4 146.1 32.8 146.0 33.9 C145.8 35.0 146.2 36.4 146.8 37.2 C147.5 38.1 148.8 38.8 149.9 39.1 C151.0 39.5 152.5 39.5 153.6 39.2 C154.7 38.8 155.9 38.0 156.5 37.0 C157.1 36.0 157.4 34.5 157.2 33.3 C157.0 32.1 156.2 30.7 155.2 29.7 C154.2 28.7 152.6 27.8 151.1 27.5 C149.5 27.1 147.6 27.2 146.1 27.6 C144.5 28.0 142.9 29.0 141.9 30.0 C140.9 31.1 140.1 32.6 139.9 33.9 C139.7 35.2 140.0 36.7 140.6 37.8 C141.2 38.8 142.4 39.8 143.5 40.2 C144.6 40.7 146.1 40.7 147.2 40.4 C148.3 40.0 149.5 39.1 150.1 38.1 C150.7 37.2 151.0 35.7 150.8 34.5 C150.6 33.3 149.8 31.8 148.8 30.9 C147.8 29.9 146.2 29.0 144.6 28.6 C143.1 28.3 141.2 28.3 139.6 28.8 C138.1 29.2 136.5 30.1 135.5 31.2 C134.5 32.3 133.8 34.0 133.6 35.4 C133.5 36.8 133.8 38.5 134.5 39.7 C135.2 40.9 136.4 41.9 137.6 42.5 C138.7 43.1 140.3 43.2 141.4 43.0 C142.6 42.8 143.8 42.1 144.5 41.2 C145.2 40.4 145.5 39.1 145.4 38.0 C145.2 36.9 144.5 35.6 143.6 34.8 C142.6 33.9 141.0 33.2 139.6 33.0 C138.1 32.8 136.2 32.9 134.8 33.5 C133.3 34.1 131.7 35.1 130.8 36.3 C129.8 37.5 129.1 39.2 129.0 40.6 C128.8 42.1 129.2 43.7 129.8 44.9 C130.5 46.1 131.7 47.2 132.9 47.8 C134.0 48.3 135.6 48.5 136.8 48.3 C137.9 48.1 139.2 47.3 139.8 46.5 C140.5 45.6 140.9 44.3 140.7 43.3 C140.6 42.2 139.8 40.8 138.9 40.0 C138.0 39.2 136.4 38.5 135.0 38.3 C133.6 38.1 131.8 38.4 130.5 39.0 C129.1 39.6 127.6 40.8 126.7 42.0 C125.8 43.3 125.2 45.0 125.1 46.5 C125.0 48.0 125.5 49.7 126.2 51.0 C127.0 52.2 128.3 53.4 129.5 54.0 C130.8 54.6 132.4 54.8 133.6 54.7 C134.9 54.5 136.2 53.8 136.9 53.1 C137.7 52.3 138.1 51.0 138.0 50.0 C138.0 49.0 137.4 47.7 136.5 46.9 C135.6 46.2 134.1 45.5 132.7 45.3 C131.3 45.2 129.5 45.4 128.1 46.0 C126.7 46.6 125.3 47.8 124.4 49.0 C123.5 50.3 122.9 52.0 122.8 53.5 C122.7 55.0 123.2 56.7 123.9 58.0 C124.6 59.2 126.0 60.4 127.2 61.0 C128.4 61.6 130.1 61.8 131.3 61.7 C132.6 61.5 133.9 60.9 134.7 60.1 C135.5 59.4 136.1 58.1 136.1 57.2 C136.1 56.2 135.6 55.0 134.8 54.2 C134.0 53.5 132.7 52.8 131.4 52.7 C130.1 52.6 128.4 52.9 127.1 53.5 C125.8 54.2 124.4 55.4 123.6 56.7 C122.8 58.0 122.3 59.7 122.3 61.2 C122.4 62.8 122.9 64.5 123.7 65.8 C124.6 67.1 126.0 68.3 127.3 69.0 C128.6 69.6 130.4 69.9 131.7 69.8 C133.1 69.7 134.5 69.0 135.3 68.3 C136.1 67.5 136.7 66.3 136.7 65.3 C136.7 64.4 136.2 63.1 135.4 62.4 C134.6 61.6 133.3 61.0 132.0 60.9 C130.7 60.8 129.0 61.0 127.7 61.7 C126.4 62.4 125.0 63.6 124.2 64.8 C123.4 66.1 122.9 67.9 122.9 69.4 C122.9 70.9 123.5 72.7 124.4 74.0 C125.2 75.3 126.7 76.5 128.0 77.1 C129.4 77.8 131.2 78.1 132.6 78.0 C133.9 77.8 135.4 77.2 136.3 76.4 C137.1 75.7 137.7 74.5 137.8 73.5 C137.8 72.5 137.4 71.3 136.6 70.6 C135.9 69.8 134.5 69.2 133.3 69.0 C132.0 68.9 130.4 69.2 129.1 69.9 C127.8 70.5 126.5 71.7 125.8 73.0 C125.0 74.3 124.5 76.1 124.6 77.6 C124.6 79.1 125.2 80.9 126.1 82.2 C127.0 83.4 128.4 84.6 129.8 85.3 C131.2 86.0 133.0 86.2 134.3 86.1 C135.7 86.0 137.2 85.4 138.0 84.6 C138.9 83.9 139.5 82.6 139.5 81.7 C139.6 80.7 139.1 79.5 138.4 78.7 C137.6 78.0 136.3 77.3 135.0 77.2 C133.8 77.1 132.1 77.4 130.8 78.0 C129.5 78.7 127.9 79.9 127.0 81.2 C126.1 82.5 125.5 84.2 125.5 85.8 C125.4 87.3 125.8 89.0 126.6 90.3 C127.3 91.6 128.6 92.8 129.9 93.5 C131.1 94.1 132.7 94.4 134.0 94.3 C135.2 94.2 136.5 93.5 137.3 92.8 C138.0 92.0 138.5 90.8 138.4 89.8 C138.3 88.9 137.7 87.6 136.8 86.9 C135.9 86.1 134.4 85.5 133.0 85.4 C131.7 85.3 129.8 85.5 128.5 86.2 C127.1 86.9 125.6 88.1 124.7 89.3 C123.8 90.6 123.2 92.4 123.1 93.9 C123.0 95.4 123.5 97.2 124.2 98.5 C125.0 99.8 126.3 101.0 127.5 101.6 C128.8 102.3 130.4 102.6 131.6 102.5 C132.9 102.3 134.2 101.7 134.9 100.9 C135.7 100.2 135.9 98.5 136.0 98.0"/>
+      <path pathLength="1" style="--d:0.70s;--t:0.43s" d="M146.0 40.0 C142.7 41.3 133.7 42.7 126.0 48.0 C118.3 53.3 109.3 61.3 100.0 72.0 C90.7 82.7 79.3 99.0 70.0 112.0 C60.7 125.0 50.7 139.3 44.0 150.0 C37.3 160.7 30.7 169.7 30.0 176.0 C29.3 182.3 35.3 187.0 40.0 188.0 C44.7 189.0 54.3 185.3 58.0 182.0 C61.7 178.7 63.0 171.0 62.0 168.0 C61.0 165.0 54.3 162.7 52.0 164.0 C49.7 165.3 45.0 177.0 48.0 176.0 C51.0 175.0 61.7 165.0 70.0 158.0 C78.3 151.0 89.0 141.3 98.0 134.0 C107.0 126.7 117.3 120.0 124.0 114.0 C130.7 108.0 135.7 100.7 138.0 98.0"/>
+      <path pathLength="1" style="--d:1.10s;--t:0.18s" d="M151.0 72.0 C150.8 73.7 148.5 78.3 150.0 82.0 C151.5 85.7 157.7 89.7 160.0 94.0 C162.3 98.3 164.3 101.7 164.0 108.0 C163.7 114.3 159.0 128.0 158.0 132.0"/>
+      <path pathLength="1" style="--d:1.26s;--t:0.18s" d="M142.0 78.0 C140.7 80.0 135.2 84.3 134.0 90.0 C132.8 95.7 133.7 104.7 135.0 112.0 C136.3 119.3 140.8 130.3 142.0 134.0"/>
+      <path pathLength="1" style="--d:1.43s;--t:0.18s" d="M136.0 92.0 C139.7 93.0 152.1 97.4 158.0 98.0 C163.9 98.6 166.5 96.7 171.4 95.5 C176.3 94.3 184.6 91.6 187.2 90.8"/>
+      <path pathLength="1" style="--d:1.60s;--t:0.49s" d="M142.0 134.0 C139.0 139.0 131.3 152.3 124.0 164.0 C116.7 175.7 107.3 191.0 98.0 204.0 C88.7 217.0 77.7 231.0 68.0 242.0 C58.3 253.0 47.7 262.7 40.0 270.0 C32.3 277.3 24.0 281.5 22.0 286.0 C20.0 290.5 24.0 295.7 28.0 297.0 C32.0 298.3 42.3 296.5 46.0 294.0 C49.7 291.5 51.3 284.3 50.0 282.0 C48.7 279.7 40.7 278.0 38.0 280.0 C35.3 282.0 27.0 290.3 34.0 294.0 C41.0 297.7 62.3 300.2 80.0 302.0 C97.7 303.8 121.3 306.0 140.0 305.0 C158.7 304.0 183.3 297.5 192.0 296.0"/>
+      <path pathLength="1" style="--d:2.05s;--t:0.19s" d="M158.0 132.0 C160.0 138.7 166.0 155.3 170.0 172.0 C174.0 188.7 178.3 211.3 182.0 232.0 C185.7 252.7 190.3 285.3 192.0 296.0"/>
+      <path pathLength="1" style="--d:2.23s;--t:0.19s" d="M150.0 140.0 C148.0 150.0 143.0 180.3 138.0 200.0 C133.0 219.7 125.3 241.3 120.0 258.0 C114.7 274.7 108.3 293.0 106.0 300.0"/>
+      <path pathLength="1" style="--d:2.40s;--t:0.19s" d="M155.0 140.0 C156.2 151.7 160.2 183.3 162.0 210.0 C163.8 236.7 165.3 285.0 166.0 300.0"/>
+      <path pathLength="1" style="--d:2.57s;--t:0.18s" d="M199.3 70.3 C200.9 68.9 207.3 65.6 209.0 61.9 C210.6 58.1 211.0 51.9 209.3 47.8 C207.7 43.7 203.0 38.9 198.9 37.3 C194.8 35.6 188.3 36.6 184.9 37.9 C181.4 39.2 179.6 43.0 178.2 45.2 C176.8 47.4 177.7 49.2 176.5 51.3 C175.2 53.3 170.8 56.2 170.7 57.5 C170.6 58.9 175.1 58.3 175.8 59.3 C176.5 60.3 174.4 61.7 175.0 63.4 C175.6 65.0 176.7 67.5 179.3 69.2 C181.8 70.9 187.1 73.5 190.5 73.7 C193.8 73.9 197.8 70.9 199.3 70.3"/>
+      <path pathLength="1" style="--d:2.74s;--t:0.18s" d="M199.6 53.3 C200.3 53.9 203.7 55.6 203.7 57.1 C203.8 58.6 200.6 61.4 200.0 62.3"/>
+      <path pathLength="1" style="--d:2.90s;--t:0.18s" d="M186.5 73.9 C186.2 75.5 185.5 81.7 184.9 83.9 C184.3 86.1 181.5 82.6 183.0 87.0 C184.6 91.5 190.7 110.7 194.1 110.6 C197.4 110.4 202.1 92.4 203.0 86.2 C203.9 79.9 200.0 75.4 199.4 73.3"/>
+      <path pathLength="1" style="--d:3.07s;--t:0.18s" d="M188.2 90.8 C189.1 91.3 191.7 93.7 193.3 93.6 C195.0 93.5 197.3 89.9 198.2 90.4 C199.0 90.8 199.3 95.8 198.5 96.4 C197.6 96.9 195.0 93.5 193.3 93.6 C191.7 93.7 189.3 97.3 188.5 96.8 C187.6 96.3 188.2 91.8 188.2 90.8"/>
+      <path pathLength="1" style="--d:3.24s;--t:0.24s" d="M203.0 86.2 C206.1 87.0 217.2 87.2 221.3 91.4 C225.3 95.5 226.4 101.5 227.1 111.1 C227.9 120.8 226.1 138.2 225.8 149.2 C225.4 160.2 230.8 172.2 225.0 177.3 C219.2 182.4 196.4 185.9 191.1 179.8 C185.8 173.7 192.9 152.2 193.4 140.6 C193.9 129.1 194.0 115.6 194.1 110.6"/>
+      <path pathLength="1" style="--d:3.46s;--t:0.18s" d="M180.4 95.1 C178.7 99.2 173.2 114.1 170.4 119.6 C167.7 125.1 167.4 125.6 164.0 128.0 C160.6 130.4 152.3 133.0 150.0 134.0"/>
+      <path pathLength="1" style="--d:3.62s;--t:0.18s" d="M223.7 101.3 C225.1 107.5 231.2 127.6 232.3 138.9 C233.5 150.2 231.6 163.3 230.7 169.0 C229.7 174.7 227.5 172.5 226.8 173.2"/>
+      <path pathLength="1" style="--d:3.79s;--t:0.56s" d="M192.1 179.7 C192.1 188.6 192.3 214.6 192.4 232.8 C192.5 250.9 194.9 278.7 192.8 288.8 C190.8 298.9 179.3 292.4 180.0 293.4 C180.7 294.3 192.5 303.2 197.1 294.6 C201.7 286.1 206.1 259.5 207.8 242.1 C209.6 224.7 206.6 190.1 207.5 190.1 C208.5 190.0 210.8 225.6 213.8 241.8 C216.9 258.0 221.1 278.9 225.8 287.3 C230.5 295.8 241.7 292.3 242.1 292.6 C242.4 293.0 230.5 299.5 227.9 289.3 C225.3 279.0 226.8 249.8 226.4 231.3 C225.9 212.8 225.3 187.1 225.1 178.3"/>
+    </g>
+  </g>
+</svg>`;
+
+function vistaBienvenida(){
+  return `
+  <section class="welcome intro" onclick="this.classList.add('skip')">
+    ${COUPLE_SVG}
+    <h1 class="names rv" style="--r:3.9s">Cristina<span class="amp">&amp;</span>Sergio</h1>
+    <div class="date rv" style="--r:4.1s">Sábado, 3 de octubre de 2026</div>
+    <p class="hook rv" style="--r:4.5s">Esta noche hay retos.<br>¿Os atrevéis?</p>
+    <ul class="rules rv" style="--r:4.8s">
+      <li><b>Cumplir un reto</b> es tan fácil como subir una foto o un vídeo corto.</li>
+      <li><b>Todo se ve en directo</b> en la galería, también lo que hacen las demás mesas.</li>
+      <li><b>Dos premios:</b> la mesa que más retos complete y la foto más graciosa de la noche.</li>
+    </ul>
+    <div class="rv" style="--r:5.1s"><button class="btn block go" onclick="paso('nombre')">¡Vamos a jugar!</button></div>
+  </section>`;
+}
+let tmpNombre = "";
+function vistaNombre(){
+  return `
+  <section class="ask">
+    <h2>¿Cómo te llamas?</h2>
+    <p>Así sabremos quién ha hecho cada reto.</p>
+    <input class="field" id="inNombre" maxlength="40" autocomplete="given-name" value="${esc(tmpNombre)}" placeholder="Tu nombre">
+    <button class="btn block" id="bNombre" onclick="guardarNombre()">Siguiente</button>
+  </section>`;
+}
+function vistaParentesco(){
+  return `
+  <section class="ask">
+    <h2>¿Y qué eres de los novios, ${esc(tmpNombre)}?</h2>
+    <p>Saldrá debajo de tus fotos en la galería.</p>
+    <input class="field" id="inRel" maxlength="60" placeholder="Prima de Cristina">
+    <div class="hint">Por ejemplo: cuñado de Sergio, amiga del instituto de Cristina…</div>
+    <button class="btn block" id="bRel" onclick="guardarJugador()">Entrar al juego</button>
+  </section>`;
+}
+function vistaElegirMesa(){
+  return `
+  <section class="ask">
+    <h2>¿En qué mesa estás?</h2>
+    <p>Lo normal es entrar escaneando el código de tu mesa. Si no, elígela aquí.</p>
+    ${[1,2,3,4].map(m=>`<button class="btn ghost block" style="margin-top:10px" onclick="mesaURL=${m};paso('bienvenida')">Mesa ${m} · ${MESAS[m]}</button>`).join("")}
+  </section>`;
+}
+
+function cabecera(){
+  return `
+  <header class="top">
+    <h1 class="names">Cristina<span class="amp">&amp;</span>Sergio</h1>
+    <div class="me"><b>${esc(yo.nombre)}</b>, ${esc(yo.parentesco)} · Mesa ${yo.mesa}, ${MESAS[yo.mesa]}</div>
+  </header>
+  <nav class="tabs" role="tablist">
+    ${[["retos","Mi mesa"],["ranking","Ranking"],["galeria","Galería"]].map(([k,l])=>`<button role="tab" aria-selected="${tab===k}" onclick="tab='${k}';render();scrollTo(0,0)">${l}</button>`).join("")}
+  </nav>`;
+}
+
+function tarjetaReto(r, esFinal=false){
+  const pr = pruebasValidas().filter(p=>p.reto_id===r.id);
+  const hecho = pr.length>0;
+  const rec = S.reclamos[r.id];
+  const recJ = rec ? S.jugadores[rec.jugador_id] : null;
+  const esMio = rec && rec.jugador_id===yo.id;
+  const up = subiendo[r.id];
+  let foot = "";
+  if(up){
+    foot = `<span class="status ${up.estado}">${esc(up.msg)}</span>` + (up.estado==="err" ? `<button class="btn sm" onclick="elegirArchivo('${r.id}')">Reintentar</button>` : "");
+  } else if(hecho){
+    const autores=[...new Set(pr.map(p=>S.jugadores[p.jugador_id]?.nombre).filter(Boolean))];
+    foot = `<span class="chip ok">Hecho</span><span class="who">por <b>${esc(autores.join(", ")||"vuestra mesa")}</b></span>
+            <span class="thumbs">${pr.slice(0,3).map(p=>mediaTag(p,"")).join("")}</span>
+            <button class="btn ghost sm" onclick="elegirArchivo('${r.id}')">Añadir otra</button>`;
+  } else if(r.tipo==="mesa" || esFinal){
+    foot = `<span class="chip">${esFinal?"Toda la boda":"Toda la mesa"}</span><button class="btn sm" onclick="elegirArchivo('${r.id}')">Subir prueba</button>`;
+  } else if(esMio){
+    foot = `<span class="who">Es tuyo</span><button class="btn gold sm" onclick="elegirArchivo('${r.id}')">Subir prueba</button>`;
+  } else if(rec){
+    foot = `<span class="who">Lo hace <b>${esc(recJ?.nombre||"alguien de tu mesa")}</b></span>`;
+  } else {
+    foot = `<button class="btn sm" onclick="pedirReto('${r.id}')">Me lo pido</button>`;
+  }
+  return `<article class="reto ${hecho?"done":""} ${esFinal?"final":""}">
+    <div class="n">${esFinal?"★":(hecho?"✓":r.n)}</div>
+    <div class="t">${esc(r.texto)}</div>
+    <div class="foot">${foot}</div>
+  </article>`;
+}
+
+function vistaRetos(){
+  const m = yo.mesa, lista = retosDe(m);
+  const apuntados = Object.values(S.jugadores).filter(j=>j.mesa===m).length;
+  const hechos = completados(m), tot = totalRetos();
+  const fin = {id:`m${m}-final`, texto:RETO_FINAL, tipo:"final"};
+  return `
+    ${S.finalAbierto ? `<h2 class="section-title">Reto final de toda la boda</h2>${tarjetaReto(fin,true)}` : ""}
+    <div class="notice">Ya sois <b>${apuntados}</b> apuntados en la mesa y hay <b>10 retos</b>. Cada uno hace <b>mínimo un reto individual</b>, y los de mesa los hacéis todos juntos. Vosotros decidís quién hace qué.</div>
+    <div class="progress-line">${hechos} de ${tot} retos cumplidos</div>
+    <div class="bar"><i style="width:${Math.round(hechos/tot*100)}%"></i></div>
+    <h2 class="section-title">Individuales</h2>
+    ${lista.filter(r=>r.tipo==="individual").map(r=>tarjetaReto(r)).join("")}
+    <h2 class="section-title">De mesa entera</h2>
+    ${lista.filter(r=>r.tipo==="mesa").map(r=>tarjetaReto(r)).join("")}`;
+}
+
+function vistaRanking(){
+  const tot = totalRetos();
+  const filas = [1,2,3,4].map(m=>({m, c:completados(m)})).sort((a,b)=>b.c-a.c || a.m-b.m);
+  return `
+    <h2 class="section-title">¿Cómo van las mesas?</h2>
+    ${filas.map(f=>`
+      <div class="rank-row ${f.m===yo.mesa?"mine":""}">
+        <div class="h"><span class="nm">${MESAS[f.m]}</span><span class="sc">${f.c} / ${tot}</span></div>
+        <div class="bar"><i style="width:${Math.round(f.c/tot*100)}%"></i></div>
+      </div>`).join("")}
+    <div class="prizes">
+      <p><b>Mesa más cumplidora:</b> la que más retos complete. No cuenta quién termina antes, y si empatan, ganan las dos.</p>
+      <p><b>Mesa más graciosa:</b> Cristina y Sergio la eligen entre las 5 fotos con más corazones de la galería.</p>
+    </div>`;
+}
+
+function vistaGaleria(){
+  const lista = pruebasValidas();
+  const quedan = MAX_HEARTS - misVotos().length;
+  const votadas = new Set(misVotos().map(v=>v.prueba_id));
+  const heart = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.1 4.3 2.4.7-1.3 2.2-2.4 4.3-2.4 3.7 0 5.8 3.9 4.3 7.2C19.5 16.4 12 21 12 21z"/></svg>`;
+  return `
+    <div class="hearts-left">Te quedan <b>${quedan} de ${MAX_HEARTS}</b> corazones. Úsalos en las fotos de otras mesas que más te gusten.</div>
+    ${lista.length===0 ? `<div class="empty">Todavía no hay fotos.<br>¿Quién se estrena?</div>` :
+      lista.map(p=>{
+        const j = S.jugadores[p.jugador_id];
+        const propia = p.mesa===yo.mesa, mia = votadas.has(p.id);
+        const dis = propia || mia || quedan<=0;
+        return `<figure class="photo" style="margin:0 0 16px">
+          ${mediaTag(p)}
+          <figcaption class="cap">
+            <div><div class="by">${esc(j?.nombre||"Invitado")}</div><div class="rel">${esc(j?.parentesco||"")} · ${MESAS[p.mesa]||""}</div></div>
+            <button class="heart ${mia?"on":""}" ${dis?"disabled":""} onclick="votar('${p.id}')" aria-label="${propia?"Es de tu mesa":"Dar un corazón"}">${heart}${votosDe(p.id)}</button>
+            <div class="rt">${esc(textoReto(p.reto_id))}</div>
+          </figcaption>
+        </figure>`;}).join("")}`;
+}
+
+/* ============ ADMIN ============ */
+let pin = sessionStorage.getItem("boda_cs_pin") || "";
+async function adminLogin(){
+  const v = $("#inPin").value.trim();
+  const {data} = await sb.rpc("admin_check",{pin:v});
+  if(data===true){ pin=v; sessionStorage.setItem("boda_cs_pin",v); render(); } else toast("PIN incorrecto");
+}
+async function adminCall(fn, args){
+  const {error} = await sb.rpc(fn, {pin, ...args});
+  if(error) toast("Error: "+error.message); else toast("Hecho");
+  await cargar(); render();
+}
+async function descargarTodo(){
+  const btn = $("#bZip"); btn.disabled = true;
+  if(!window.JSZip){ await new Promise((ok,ko)=>{const s=document.createElement("script"); s.src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"; s.onload=ok; s.onerror=ko; document.head.appendChild(s);}); }
+  const zip = new JSZip(); let i=0;
+  for(const p of S.pruebas){
+    i++; btn.textContent = `Descargando ${i}/${S.pruebas.length}…`;
+    try{
+      const b = await (await fetch(fotoURL(p.foto_path))).blob();
+      const j = S.jugadores[p.jugador_id];
+      const nom = `${(MESAS[p.mesa]||"mesa").replace(/\s+/g,"-")}/${p.reto_id}_${(j?.nombre||"inv").replace(/[^\wáéíóúñ-]/gi,"")}_${i}.${p.foto_path.split(".").pop()}`;
+      zip.file((p.anulada?"anuladas/":"")+nom, b);
+    }catch(e){ console.error(e); }
+  }
+  btn.textContent = "Preparando el archivo…";
+  const out = await zip.generateAsync({type:"blob"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(out); a.download = "boda-cristina-sergio.zip"; a.click();
+  btn.disabled=false; btn.textContent="Descargar todas las fotos";
+}
+function vistaAdmin(){
+  if(!pin) return `<section class="ask"><h2>Panel del organizador</h2><p>Introduce tu PIN.</p>
+    <input class="field" id="inPin" inputmode="numeric" maxlength="6" placeholder="······">
+    <button class="btn block" onclick="adminLogin()">Entrar</button></section>`;
+  const top = pruebasValidas().map(p=>({p,v:votosDe(p.id)})).sort((a,b)=>b.v-a.v).slice(0,5);
+  const cell = (p,extra="") => { const j=S.jugadores[p.jugador_id]; return `<div class="cell ${p.anulada?"off":""}">${mediaTag(p)}<div class="i"><b>${esc(j?.nombre||"")}</b> · Mesa ${p.mesa}<br>${esc(textoReto(p.reto_id)).slice(0,60)}…<br>${extra}</div></div>`; };
+  return `<section class="admin">
+    <header class="top"><h1 class="names">Cristina<span class="amp">&amp;</span>Sergio</h1><div class="me">Panel del organizador</div></header>
+    <h2>Marcador</h2>
+    ${[1,2,3,4].map(m=>`<div class="claim"><span>${MESAS[m]}</span><b>${completados(m)} / ${totalRetos()}</b></div>`).join("")}
+    <h2>Reto final</h2>
+    <p>${S.finalAbierto?"Abierto: todas las mesas lo ven.":"Cerrado. Ábrelo justo antes de dar los premios."}</p>
+    <div class="row"><button class="btn ${S.finalAbierto?"ghost":"gold"}" onclick="adminCall('admin_reto_final',{abierto:${!S.finalAbierto}})">${S.finalAbierto?"Cerrar reto final":"Abrir reto final"}</button></div>
+    <h2>Las 5 más votadas</h2>
+    <p>Para que los novios elijan la mesa más graciosa.</p>
+    <div class="grid">${top.map(({p,v})=>cell(p,`❤ ${v}`)).join("") || "<p>Aún no hay votos.</p>"}</div>
+    <h2>Retos pedidos</h2>
+    <p>Si alguien se pide un reto y no lo hace, suéltalo aquí.</p>
+    ${Object.values(S.reclamos).map(r=>`<div class="claim"><span>Mesa ${r.mesa} · ${esc(S.jugadores[r.jugador_id]?.nombre||"")}: ${esc(textoReto(r.reto_id)).slice(0,50)}…</span><button class="btn ghost sm" onclick="adminCall('admin_soltar_reto',{p_reto:'${r.reto_id}'})">Soltar</button></div>`).join("") || "<p>Ninguno todavía.</p>"}
+    <h2>Todas las pruebas</h2>
+    <div class="row"><button class="btn" id="bZip" onclick="descargarTodo()">Descargar todas las fotos</button></div>
+    <div class="grid">${S.pruebas.map(p=>cell(p,`<button class="btn ghost sm" style="margin-top:6px" onclick="adminCall('admin_anular',{p_id:'${p.id}',p_anulada:${!p.anulada}})">${p.anulada?"Recuperar":"Anular"}</button>`)).join("")}</div>
+  </section>`;
+}
+
+/* ============ FLUJO ============ */
+let fase = "bienvenida";
+function paso(f){ fase=f; render(); scrollTo(0,0); setTimeout(()=>{ const i=document.querySelector(".field"); if(i) i.focus(); },50); }
+function guardarNombre(){
+  const v = $("#inNombre").value.trim();
+  if(!v){ toast("Escribe tu nombre"); return; }
+  tmpNombre = v.charAt(0).toUpperCase()+v.slice(1); paso("parentesco");
+}
+async function guardarJugador(){
+  const rel = $("#inRel").value.trim();
+  if(!rel){ toast("Cuéntanos qué eres de los novios"); return; }
+  const b = $("#bRel"); b.disabled=true; b.textContent="Entrando…";
+  const {data,error} = await sb.from("jugadores").insert({nombre:tmpNombre, parentesco:rel, mesa:mesaURL}).select().single();
+  if(error){ b.disabled=false; b.textContent="Entrar al juego"; toast("No se ha podido entrar. Comprueba el wifi."); return; }
+  yo = data; localStorage.setItem("boda_cs_jugador", JSON.stringify(yo));
+  await cargar(); fase="juego"; render(); scrollTo(0,0);
+}
+document.addEventListener("keydown", e=>{
+  if(e.key!=="Enter") return;
+  if(document.activeElement?.id==="inNombre") guardarNombre();
+  else if(document.activeElement?.id==="inRel") guardarJugador();
+  else if(document.activeElement?.id==="inPin") adminLogin();
+});
+
+function render(){
+  const app = $("#app");
+  if(isAdmin){ app.innerHTML = vistaAdmin(); return; }
+  if(yo && fase!=="juego") fase = "juego";
+  if(fase==="juego" && yo){
+    app.dataset.k = "";
+    if(!S.loaded){ app.innerHTML = cabecera() + `<div class="empty">Cargando…</div>`; return; }
+    app.innerHTML = cabecera() + (tab==="retos"?vistaRetos():tab==="ranking"?vistaRanking():vistaGaleria());
+    return;
+  }
+  // Antes de entrar al juego no se repinta con los datos en directo:
+  // así no se reinicia el dibujo ni se borra lo que alguien está escribiendo.
+  const k = fase+"|"+mesaURL;
+  if(app.dataset.k===k) return;
+  app.dataset.k = k;
+  if(!mesaURL || !MESAS[mesaURL]){ app.innerHTML = vistaElegirMesa(); return; }
+  app.innerHTML = fase==="nombre"?vistaNombre():fase==="parentesco"?vistaParentesco():vistaBienvenida();
+}
+
+(async function init(){
+  render();
+  await cargar();
+  if(yo && !S.jugadores[yo.id]){ yo=null; localStorage.removeItem("boda_cs_jugador"); fase="bienvenida"; }
+  render();
+  suscribir();
+})();
+</script>
+</body>
+</html>
