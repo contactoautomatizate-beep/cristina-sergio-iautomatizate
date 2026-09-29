@@ -100,6 +100,11 @@ h1,h2,h3{font-family:var(--serif);font-weight:500;margin:0;letter-spacing:.01em}
 .thumbs{display:flex;gap:6px}
 .thumbs img,.thumbs video{width:54px;height:54px;object-fit:cover;border-radius:10px;background:var(--beige)}
 .status{font-size:13px;font-weight:600}
+.up-btns{display:flex;gap:8px;flex-wrap:wrap}
+.thumbs .th{position:relative;display:inline-block}
+.thumbs .del{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:0;background:var(--ink);color:#fff;font-size:13px;line-height:22px;padding:0}
+.preview{width:54px;height:54px;object-fit:cover;border-radius:10px;opacity:.6}
+.del-link{border:0;background:none;color:var(--err);font-size:13px;font-weight:600;padding:4px 0;text-align:left}
 .status.up{color:var(--gold)}
 .status.ok{color:var(--ok)}
 .status.err{color:var(--err)}
@@ -344,14 +349,14 @@ async function subirPrueba(retoId, file){
   const esVideo = file.type.startsWith("video/");
   if(esVideo && file.size > 50*1024*1024){ toast("El vídeo pesa demasiado. Grábalo de menos de 20 segundos."); return; }
   const m = Number(retoId.slice(1).split("-")[0]);
-  subiendo[retoId] = {estado:"up", msg:"Subiendo…"}; render();
+  subiendo[retoId] = {estado:"up", msg:"Subiendo tu foto…", prev: esVideo ? "" : URL.createObjectURL(file)}; render();
   const cuerpo = await comprimir(file);
   const ext = esVideo ? (file.name.split(".").pop()||"mp4").toLowerCase() : "jpg";
   const path = `mesa${m}/${retoId}_${Date.now()}_${Math.random().toString(36).slice(2,7)}.${ext}`;
   let ok=false, err;
   for(let i=0;i<3 && !ok;i++){
     const {error} = await sb.storage.from(BUCKET).upload(path, cuerpo, {contentType: esVideo ? file.type : "image/jpeg", upsert:true});
-    if(!error) ok=true; else { err=error; subiendo[retoId]={estado:"up",msg:`Reintentando (${i+2}/3)…`}; render(); await new Promise(r=>setTimeout(r,1500*(i+1))); }
+    if(!error) ok=true; else { err=error; subiendo[retoId]={...subiendo[retoId],estado:"up",msg:`Reintentando (${i+2}/3)…`}; render(); await new Promise(r=>setTimeout(r,1500*(i+1))); }
   }
   if(ok){
     const {error} = await sb.from("pruebas").insert({reto_id:retoId, mesa:m, jugador_id:yo.id, foto_path:path, es_video:esVideo});
@@ -361,11 +366,21 @@ async function subirPrueba(retoId, file){
   else { subiendo[retoId]={estado:"err",msg:"No se ha podido subir. Comprueba el wifi y vuelve a intentarlo."}; console.error(err); }
   render();
 }
-function elegirArchivo(retoId){
+function elegirArchivo(retoId, camara){
   const inp = document.createElement("input");
   inp.type="file"; inp.accept="image/*,video/*";
+  if(camara) inp.setAttribute("capture","environment");
   inp.onchange = () => subirPrueba(retoId, inp.files[0]);
   inp.click();
+}
+function botonesSubir(id, dorado){
+  return `<span class="up-btns"><button class="btn ${dorado?"gold":""} sm" onclick="elegirArchivo('${id}',true)">📷 Cámara</button><button class="btn ghost sm" onclick="elegirArchivo('${id}',false)">🖼 Galería</button></span>`;
+}
+async function borrarMia(id){
+  if(!confirm("¿Borrar esta foto? No se puede deshacer.")) return;
+  const {error} = await sb.rpc("borrar_prueba",{p_id:id, p_token:yo.token});
+  toast(error ? "No se ha podido borrar" : "Foto borrada");
+  refrescar("pruebas");
 }
 async function pedirReto(retoId){
   const m = Number(retoId.slice(1).split("-")[0]);
@@ -467,16 +482,16 @@ function tarjetaReto(r, esFinal=false){
   const up = subiendo[r.id];
   let foot = "";
   if(up){
-    foot = `<span class="status ${up.estado}">${esc(up.msg)}</span>` + (up.estado==="err" ? `<button class="btn sm" onclick="elegirArchivo('${r.id}')">Reintentar</button>` : "");
+    foot = (up.prev ? `<img class="preview" src="${up.prev}" alt="">` : "") + `<span class="status ${up.estado}">${esc(up.msg)}</span>` + (up.estado==="err" ? botonesSubir(r.id) : "");
   } else if(hecho){
     const autores=[...new Set(pr.map(p=>S.jugadores[p.jugador_id]?.nombre).filter(Boolean))];
     foot = `<span class="chip ok">Hecho</span><span class="who">por <b>${esc(autores.join(", ")||"vuestra mesa")}</b></span>
-            <span class="thumbs">${pr.slice(0,3).map(p=>mediaTag(p,"")).join("")}</span>
-            <button class="btn ghost sm" onclick="elegirArchivo('${r.id}')">Añadir otra</button>`;
+            <span class="thumbs">${pr.slice(0,3).map(p=>`<span class="th">${mediaTag(p,"")}${p.jugador_id===yo.id?`<button class="del" aria-label="Borrar mi foto" onclick="borrarMia('${p.id}')">✕</button>`:""}</span>`).join("")}</span>
+            ${botonesSubir(r.id)}`;
   } else if(r.tipo==="mesa" || esFinal){
-    foot = `<span class="chip">${esFinal?"Toda la boda":"Toda la mesa"}</span><button class="btn sm" onclick="elegirArchivo('${r.id}')">Subir prueba</button>`;
+    foot = `<span class="chip">${esFinal?"Toda la boda":"Toda la mesa"}</span>${botonesSubir(r.id)}`;
   } else if(esMio){
-    foot = `<span class="who">Es tuyo</span><button class="btn gold sm" onclick="elegirArchivo('${r.id}')">Subir prueba</button>`;
+    foot = `<span class="who">Es tuyo. Sube tu prueba:</span>${botonesSubir(r.id,true)}`;
   } else if(rec){
     foot = `<span class="who">Lo hace <b>${esc(recJ?.nombre||"alguien de tu mesa")}</b></span>`;
   } else {
@@ -539,6 +554,7 @@ function vistaGaleria(){
             <div><div class="by">${esc(j?.nombre||"Invitado")}</div><div class="rel">${esc(j?.parentesco||"")} · ${MESAS[p.mesa]||""}</div></div>
             <button class="heart ${mia?"on":""}" ${dis?"disabled":""} onclick="votar('${p.id}')" aria-label="${propia?"Es de tu mesa":"Dar un corazón"}">${heart}${votosDe(p.id)}</button>
             <div class="rt">${esc(textoReto(p.reto_id))}</div>
+            ${p.jugador_id===yo.id?`<button class="del-link" onclick="borrarMia('${p.id}')">Borrar mi foto</button>`:""}
           </figcaption>
         </figure>`;}).join("")}`;
 }
@@ -594,7 +610,7 @@ function vistaAdmin(){
     ${Object.values(S.reclamos).map(r=>`<div class="claim"><span>Mesa ${r.mesa} · ${esc(S.jugadores[r.jugador_id]?.nombre||"")}: ${esc(textoReto(r.reto_id)).slice(0,50)}…</span><button class="btn ghost sm" onclick="adminCall('admin_soltar_reto',{p_reto:'${r.reto_id}'})">Soltar</button></div>`).join("") || "<p>Ninguno todavía.</p>"}
     <h2>Todas las pruebas</h2>
     <div class="row"><button class="btn" id="bZip" onclick="descargarTodo()">Descargar todas las fotos</button></div>
-    <div class="grid">${S.pruebas.map(p=>cell(p,`<button class="btn ghost sm" style="margin-top:6px" onclick="adminCall('admin_anular',{p_id:'${p.id}',p_anulada:${!p.anulada}})">${p.anulada?"Recuperar":"Anular"}</button>`)).join("")}</div>
+    <div class="grid">${S.pruebas.map(p=>cell(p,`<button class="btn ghost sm" style="margin-top:6px" onclick="confirm('¿Borrar esta foto?')&&adminCall('admin_borrar',{p_id:'${p.id}'})">Borrar</button>`)).join("")}</div>
   </section>`;
 }
 
@@ -610,7 +626,7 @@ async function guardarJugador(){
   const rel = $("#inRel").value.trim();
   if(!rel){ toast("Cuéntanos qué eres de los novios"); return; }
   const b = $("#bRel"); b.disabled=true; b.textContent="Entrando…";
-  const {data,error} = await sb.from("jugadores").insert({nombre:tmpNombre, parentesco:rel, mesa:mesaURL}).select().single();
+  const {data,error} = await sb.rpc("alta_jugador",{p_nombre:tmpNombre, p_parentesco:rel, p_mesa:mesaURL});
   if(error){ b.disabled=false; b.textContent="Entrar al juego"; toast("No se ha podido entrar. Comprueba el wifi."); return; }
   yo = data; localStorage.setItem("boda_cs_jugador", JSON.stringify(yo));
   await cargar(); fase="juego"; render(); scrollTo(0,0);
@@ -644,7 +660,7 @@ function render(){
 (async function init(){
   render();
   await cargar();
-  if(yo && !S.jugadores[yo.id]){ yo=null; localStorage.removeItem("boda_cs_jugador"); fase="bienvenida"; }
+  if(yo && (!yo.token || !S.jugadores[yo.id])){ yo=null; localStorage.removeItem("boda_cs_jugador"); fase="bienvenida"; }
   render();
   suscribir();
 })();
