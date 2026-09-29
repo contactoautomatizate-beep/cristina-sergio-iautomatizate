@@ -280,6 +280,7 @@ function retosDe(m){
 function textoReto(id){
   const [m,n] = id.slice(1).split("-");
   if(n==="final") return RETO_FINAL;
+  if(n==="libre") return "Foto libre";
   return RETOS[m]?.[Number(n)-1] || "";
 }
 
@@ -300,7 +301,7 @@ function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("sh
 const fotoURL = p => sb.storage.from(BUCKET).getPublicUrl(p).data.publicUrl;
 const pruebasValidas = () => S.pruebas.filter(p=>!p.anulada);
 function completados(m){
-  const ids = new Set(pruebasValidas().filter(p=>p.mesa===m).map(p=>p.reto_id));
+  const ids = new Set(pruebasValidas().filter(p=>p.mesa===m && !p.reto_id.endsWith("-libre")).map(p=>p.reto_id));
   return ids.size;
 }
 const totalRetos = () => 10 + (S.finalAbierto ? 1 : 0);
@@ -363,7 +364,7 @@ async function subirPrueba(retoId, file){
     const {error} = await sb.from("pruebas").insert({reto_id:retoId, mesa:m, jugador_id:yo.id, foto_path:path, es_video:esVideo});
     if(error){ ok=false; err=error; }
   }
-  if(ok){ subiendo[retoId]={estado:"ok",msg:"¡Listo! Ya está en la galería"}; toast("¡Reto cumplido! 🎉"); refrescar("pruebas"); setTimeout(()=>{delete subiendo[retoId]; render();},4000); }
+  if(ok){ subiendo[retoId]={estado:"ok",msg:"¡Listo! Ya está en la galería"}; toast(retoId.endsWith("-libre") ? "¡Foto subida! 📸" : "¡Reto cumplido! 🎉"); refrescar("pruebas"); setTimeout(()=>{delete subiendo[retoId]; render();},4000); }
   else { subiendo[retoId]={estado:"err",msg:"No se ha podido subir. Comprueba el wifi y vuelve a intentarlo."}; console.error(err); }
   render();
 }
@@ -505,6 +506,18 @@ function tarjetaReto(r, esFinal=false){
   </article>`;
 }
 
+function tarjetaLibre(){
+  const id = `m${yo.mesa}-libre`, up = subiendo[id];
+  const mias = pruebasValidas().filter(p=>p.reto_id===id && p.jugador_id===yo.id);
+  let foot = up
+    ? (up.prev ? `<img class="preview" src="${up.prev}" alt="">` : "") + `<span class="status ${up.estado}">${esc(up.msg)}</span>` + (up.estado==="err" ? botonesSubir(id) : "")
+    : (mias.length ? `<span class="thumbs">${mias.slice(0,3).map(p=>`<span class="th">${mediaTag(p,"")}<button class="del" aria-label="Borrar mi foto" onclick="borrarMia('${p.id}')">✕</button></span>`).join("")}</span>` : "") + botonesSubir(id);
+  return `<article class="reto">
+    <div class="n">📸</div>
+    <div class="t"><b>Fotos libres.</b> ¿Un momento bonito o gracioso? Súbelo aunque no sea un reto. Sale en la galería, pero no suma para el ranking.</div>
+    <div class="foot">${foot}</div>
+  </article>`;
+}
 function vistaRetos(){
   const m = yo.mesa, lista = retosDe(m);
   const apuntados = Object.values(S.jugadores).filter(j=>j.mesa===m).length;
@@ -518,7 +531,9 @@ function vistaRetos(){
     <h2 class="section-title">Individuales</h2>
     ${lista.filter(r=>r.tipo==="individual").map(r=>tarjetaReto(r)).join("")}
     <h2 class="section-title">De mesa entera</h2>
-    ${lista.filter(r=>r.tipo==="mesa").map(r=>tarjetaReto(r)).join("")}`;
+    ${lista.filter(r=>r.tipo==="mesa").map(r=>tarjetaReto(r)).join("")}
+    <h2 class="section-title">Y además…</h2>
+    ${tarjetaLibre()}`;
 }
 
 function vistaRanking(){
@@ -546,7 +561,7 @@ function vistaGaleria(){
   const heart = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.1 4.3 2.4.7-1.3 2.2-2.4 4.3-2.4 3.7 0 5.8 3.9 4.3 7.2C19.5 16.4 12 21 12 21z"/></svg>`;
   return `
     ${jurado
-      ? `<div class="notice">Vosotros sois el <b>jurado</b>: al final de la noche elegís la foto más graciosa entre las <b>5 con más corazones</b>, que aparecen marcadas con ★.</div>`
+      ? `<div class="notice">Vosotros sois el <b>jurado</b>: al final de la noche elegís la foto más graciosa entre las <b>5 con más corazones</b>, que aparecen marcadas con ★.</div>${tarjetaLibre()}`
       : `<div class="hearts-left">Te quedan <b>${quedan} de ${MAX_HEARTS}</b> corazones. Úsalos en las fotos de otras mesas que más te gusten.</div>`}
     ${lista.length===0 ? `<div class="empty">Todavía no hay fotos.<br>¿Quién se estrena?</div>` :
       lista.map(p=>{
