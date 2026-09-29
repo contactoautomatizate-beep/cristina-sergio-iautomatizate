@@ -224,7 +224,7 @@ const BUCKET = "fotos";
 const MAX_HEARTS = 3;
 
 const MESAS = {
-  1:"Familia de la novia", 2:"Familia del novio", 3:"La juventud", 4:"Amigos de los novios"
+  0:"Mesa de los novios", 1:"Familia de la novia", 2:"Familia del novio", 3:"La juventud", 4:"Amigos de los novios"
 };
 const RETOS = {
  1:[
@@ -286,7 +286,8 @@ function textoReto(id){
 /* ============ ESTADO ============ */
 const params = new URLSearchParams(location.search);
 const isAdmin = params.has("admin");
-let mesaURL = Number(params.get("mesa")) || 0;
+const esNoviosURL = (params.get("mesa")||"").toLowerCase()==="novios";
+let mesaURL = esNoviosURL ? 0 : (Number(params.get("mesa")) || 0);
 let yo = JSON.parse(localStorage.getItem("boda_cs_jugador") || "null");
 let tab = "retos";
 const S = { jugadores:{}, reclamos:{}, pruebas:[], votos:[], finalAbierto:false, loaded:false };
@@ -466,10 +467,10 @@ function cabecera(){
   return `
   <header class="top">
     <h1 class="names">Cristina<span class="amp">&amp;</span>Sergio</h1>
-    <div class="me"><b>${esc(yo.nombre)}</b>, ${esc(yo.parentesco)} · Mesa ${yo.mesa}, ${MESAS[yo.mesa]}</div>
+    <div class="me"><b>${esc(yo.nombre)}</b>, ${esc(yo.parentesco)} · ${yo.mesa===0 ? MESAS[0] : `Mesa ${yo.mesa}, ${MESAS[yo.mesa]}`}</div>
   </header>
   <nav class="tabs" role="tablist">
-    ${[["retos","Mi mesa"],["ranking","Ranking"],["galeria","Galería"]].map(([k,l])=>`<button role="tab" aria-selected="${tab===k}" onclick="tab='${k}';render();scrollTo(0,0)">${l}</button>`).join("")}
+    ${(yo.mesa===0 ? [["galeria","Galería"],["ranking","Ranking"]] : [["retos","Mi mesa"],["ranking","Ranking"],["galeria","Galería"]]).map(([k,l])=>`<button role="tab" aria-selected="${tab===k}" onclick="tab='${k}';render();scrollTo(0,0)">${l}</button>`).join("")}
   </nav>`;
 }
 
@@ -540,18 +541,22 @@ function vistaGaleria(){
   const lista = pruebasValidas();
   const quedan = MAX_HEARTS - misVotos().length;
   const votadas = new Set(misVotos().map(v=>v.prueba_id));
+  const jurado = yo.mesa===0;
+  const top5 = new Set(lista.map(p=>({id:p.id,v:votosDe(p.id)})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).slice(0,5).map(x=>x.id));
   const heart = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.1 4.3 2.4.7-1.3 2.2-2.4 4.3-2.4 3.7 0 5.8 3.9 4.3 7.2C19.5 16.4 12 21 12 21z"/></svg>`;
   return `
-    <div class="hearts-left">Te quedan <b>${quedan} de ${MAX_HEARTS}</b> corazones. Úsalos en las fotos de otras mesas que más te gusten.</div>
+    ${jurado
+      ? `<div class="notice">Vosotros sois el <b>jurado</b>: al final de la noche elegís la foto más graciosa entre las <b>5 con más corazones</b>, que aparecen marcadas con ★.</div>`
+      : `<div class="hearts-left">Te quedan <b>${quedan} de ${MAX_HEARTS}</b> corazones. Úsalos en las fotos de otras mesas que más te gusten.</div>`}
     ${lista.length===0 ? `<div class="empty">Todavía no hay fotos.<br>¿Quién se estrena?</div>` :
       lista.map(p=>{
         const j = S.jugadores[p.jugador_id];
         const propia = p.mesa===yo.mesa, mia = votadas.has(p.id);
-        const dis = propia || mia || quedan<=0;
+        const dis = jurado || propia || mia || quedan<=0;
         return `<figure class="photo" style="margin:0 0 16px">
           ${mediaTag(p)}
           <figcaption class="cap">
-            <div><div class="by">${esc(j?.nombre||"Invitado")}</div><div class="rel">${esc(j?.parentesco||"")} · ${MESAS[p.mesa]||""}</div></div>
+            <div><div class="by">${esc(j?.nombre||"Invitado")}</div><div class="rel">${esc(j?.parentesco||"")} · ${MESAS[p.mesa]||""}</div>${jurado&&top5.has(p.id)?`<span class="chip ok" style="margin-top:4px;display:inline-block">★ Top 5</span>`:""}</div>
             <button class="heart ${mia?"on":""}" ${dis?"disabled":""} onclick="votar('${p.id}')" aria-label="${propia?"Es de tu mesa":"Dar un corazón"}">${heart}${votosDe(p.id)}</button>
             <div class="rt">${esc(textoReto(p.reto_id))}</div>
             ${p.jugador_id===yo.id?`<button class="del-link" onclick="borrarMia('${p.id}')">Borrar mi foto</button>`:""}
@@ -643,6 +648,7 @@ function render(){
   if(isAdmin){ app.innerHTML = vistaAdmin(); return; }
   if(yo && fase!=="juego") fase = "juego";
   if(fase==="juego" && yo){
+    if(yo.mesa===0 && tab==="retos") tab="galeria";
     app.dataset.k = "";
     if(!S.loaded){ app.innerHTML = cabecera() + `<div class="empty">Cargando…</div>`; return; }
     app.innerHTML = cabecera() + (tab==="retos"?vistaRetos():tab==="ranking"?vistaRanking():vistaGaleria());
@@ -653,7 +659,7 @@ function render(){
   const k = fase+"|"+mesaURL;
   if(app.dataset.k===k) return;
   app.dataset.k = k;
-  if(!mesaURL || !MESAS[mesaURL]){ app.innerHTML = vistaElegirMesa(); return; }
+  if(!esNoviosURL && (!mesaURL || !MESAS[mesaURL])){ app.innerHTML = vistaElegirMesa(); return; }
   app.innerHTML = fase==="nombre"?vistaNombre():fase==="parentesco"?vistaParentesco():vistaBienvenida();
 }
 
