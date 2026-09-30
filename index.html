@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Cristina &amp; Sergio · Retos de la boda</title>
 <meta name="theme-color" content="#FBF8F3">
+<meta name="description" content="Escanea el código de tu mesa, cumple los retos y sube tus fotos y vídeos. Sábado 3 de octubre de 2026.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Cristina &amp; Sergio · Retos de la boda">
+<meta property="og:description" content="Escanea el código de tu mesa, cumple los retos y sube tus fotos y vídeos. Sábado 3 de octubre de 2026.">
+<meta property="og:url" content="https://contactoautomatizate-beep.github.io/cristina-sergio-iautomatizate/">
+<meta property="og:image" content="https://contactoautomatizate-beep.github.io/cristina-sergio-iautomatizate/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💍</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -171,6 +180,17 @@ footer a{color:var(--gold);font-weight:700;text-decoration:none}
 .heart.own,.heart.full{opacity:.5}
 .inapp{background:#FFF6E5;border:1px solid #E9CF97;border-radius:14px;padding:12px 14px;margin:14px 0 0;font-size:14px;text-align:left;color:var(--ink)}
 .inapp .btn{margin-top:10px}
+.photo .media{max-height:520px}
+.vwrap{position:relative;background:linear-gradient(160deg,#4A3F34,#2B241D)}
+.vwrap .media{background:transparent}
+.vbadge{position:absolute;top:10px;left:10px;display:inline-flex;align-items:center;gap:6px;padding:5px 11px 5px 9px;border-radius:999px;background:rgba(251,248,243,.92);color:var(--ink);font-size:12.5px;font-weight:700;letter-spacing:.02em;box-shadow:0 2px 10px rgba(0,0,0,.18);pointer-events:none;transition:opacity .25s}
+.vbadge i{width:0;height:0;border-left:8px solid var(--gold);border-top:5px solid transparent;border-bottom:5px solid transparent}
+.vplay{position:absolute;left:50%;top:50%;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;background:rgba(251,248,243,.9);box-shadow:0 4px 18px rgba(0,0,0,.25);pointer-events:none;transition:opacity .25s}
+.vplay::after{content:"";position:absolute;left:26px;top:20px;border-left:18px solid var(--ink);border-top:12px solid transparent;border-bottom:12px solid transparent}
+.vwrap.playing .vbadge,.vwrap.playing .vplay{opacity:0}
+.th.vid::after{content:"";position:absolute;left:50%;top:50%;margin:-9px 0 0 -6px;border-left:14px solid #fff;border-top:9px solid transparent;border-bottom:9px solid transparent;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5));pointer-events:none}
+.nuevas{position:fixed;left:50%;top:calc(76px + env(safe-area-inset-top,0px));transform:translate(-50%,-20px);opacity:0;z-index:15;border:0;border-radius:999px;background:var(--gold);color:#fff;font-weight:700;font-size:14px;padding:10px 18px;box-shadow:0 6px 20px rgba(59,51,42,.28);transition:.3s;pointer-events:none}
+.nuevas.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
 .admin .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
 .admin .cell{background:#fff;border:1px solid var(--beige-2);border-radius:12px;overflow:hidden;font-size:12px}
 .admin .cell .media{width:100%;height:120px;object-fit:cover;display:block;background:var(--beige)}
@@ -299,7 +319,9 @@ const RETOS = {
   "Arrancad un aplauso de la nada y conseguid que se una todo el salón (vídeo).",
   "Reunid a 5 personas que tengan algo en común y haceos una foto (contad qué es)."]
 };
-const RETO_FINAL = "Foto de todos los invitados juntos con los novios en el centro, y después un grito conjunto de «¡Vivan los novios!» grabado en vídeo.";
+const RETO_FINAL = "Foto final de toda la mesa junta con Cristina y Sergio en el centro.";
+const RETO_BODA = "Foto de TODOS los invitados juntos con los novios y, después, un grito de «¡Vivan los novios!» grabado en vídeo. Basta con que una mesa lo suba y cuenta para todas.";
+const VERSION = "2026-09-30.4";
 
 function retosDe(m){
   return RETOS[m].map((t,i)=>({id:`m${m}-${i+1}`, n:i+1, texto:t, tipo: i>=8 ? "mesa":"individual"}));
@@ -307,6 +329,7 @@ function retosDe(m){
 function textoReto(id){
   const [m,n] = id.slice(1).split("-");
   if(n==="final") return RETO_FINAL;
+  if(n==="boda") return RETO_BODA;
   if(n==="libre") return "Foto libre";
   return RETOS[m]?.[Number(n)-1] || "";
 }
@@ -349,11 +372,12 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),2800); }
 const fotoURL = p => sb.storage.from(BUCKET).getPublicUrl(p).data.publicUrl;
 const pruebasValidas = () => S.pruebas.filter(p=>!p.anulada);
+const esBoda = p => p.reto_id.endsWith("-boda");
 function completados(m){
-  const ids = new Set(pruebasValidas().filter(p=>p.mesa===m && !p.reto_id.endsWith("-libre")).map(p=>p.reto_id));
-  return ids.size;
+  const ids = new Set(pruebasValidas().filter(p=>p.mesa===m && !p.reto_id.endsWith("-libre") && !esBoda(p)).map(p=>p.reto_id));
+  return ids.size + (pruebasValidas().some(esBoda) ? 1 : 0); // el reto de toda la boda cuenta para todas las mesas
 }
-const totalRetos = () => 10 + (S.finalAbierto ? 1 : 0);
+const totalRetos = () => 10 + (S.finalAbierto ? 2 : 0);
 const misVotos = () => yo ? S.votos.filter(v=>v.jugador_id===yo.id) : [];
 const esNovio = j => !!j && j.mesa===0 && ["la novia","el novio"].includes(String(j.parentesco||"").trim().toLowerCase());
 const esVotoNovios = v => esNovio(S.jugadores[v.jugador_id]);
@@ -370,9 +394,19 @@ const retosPendientes = () => Object.values(S.reclamos).filter(r=>r.jugador_id==
 // Navegadores dentro de otras apps (Instagram, Facebook, TikTok…): no guardan bien la sesión y la cámara falla.
 const enOtraApp = /Instagram|FBAN|FBAV|FB_IAB|Line\/|MicroMessenger|Snapchat|musical_ly|Bytedance|TikTok|WhatsApp/i.test(navigator.userAgent||"");
 let filtroMesa = "todas";
-const mediaTag = (p, cls="media") => p.es_video
-  ? `<video class="${cls}" src="${fotoURL(p.foto_path)}#t=0.1" preload="metadata" controls playsinline></video>`
-  : `<img class="${cls}" src="${fotoURL(p.foto_path)}" alt="" loading="lazy">`;
+// Cada foto reserva su hueco con sus medidas reales: así la galería no da saltos al actualizarse.
+const proporcion = p => (p.ancho && p.alto) ? `${p.ancho}/${p.alto}` : (p.es_video ? "9/16" : "3/4");
+const mediaTag = (p, cls="media") => {
+  if(cls!=="media") return p.es_video
+    ? `<video src="${fotoURL(p.foto_path)}#t=0.1" preload="metadata" muted playsinline></video>`
+    : `<img src="${fotoURL(p.foto_path)}" alt="" loading="lazy">`;
+  return p.es_video
+    ? `<div class="vwrap" onclick="verVideo(this)"><video class="media" style="aspect-ratio:${proporcion(p)}" src="${fotoURL(p.foto_path)}#t=0.1" preload="metadata" playsinline></video><span class="vplay"></span><span class="vbadge"><i></i>Vídeo</span></div>`
+    : `<img class="media" style="aspect-ratio:${proporcion(p)}" src="${fotoURL(p.foto_path)}" alt="" loading="lazy">`;
+};
+// El vídeo muestra nuestro botón de play bonito; al tocarlo aparecen los controles normales y empieza.
+function verVideo(w){ const v = w.querySelector("video"); if(v.controls) return; v.controls = true; w.classList.add("playing"); v.play().catch(()=>{}); }
+document.addEventListener("play", e=>e.target.closest?.(".vwrap")?.classList.add("playing"), true);
 
 /* ============ DATOS ============ */
 async function cargar(tabla){
@@ -399,20 +433,60 @@ function suscribir(){
   document.addEventListener("visibilitychange", async ()=>{ if(!document.hidden){ await cargar(); renderDatos(); } });
 }
 
-// Los datos en directo no deben cortar un vídeo que alguien está viendo ni una descarga en curso.
-let renderPendiente = false, descargando = false;
+// Actualizar sin molestar, como las apps profesionales:
+// - si no ha cambiado nada, no se repinta;
+// - si estás viendo un vídeo, descargando o tocando la pantalla, espera;
+// - en la galería, si has bajado, no te mueve: aparece «↑ N fotos nuevas» y actualiza cuando tú quieras o al volver arriba.
+let renderPendiente = false, descargando = false, firmaPintada = "", idsPintados = new Set(), ultimaInteraccion = 0, reintento;
+["touchstart","pointerdown","wheel","keydown"].forEach(ev=>addEventListener(ev, ()=>{ ultimaInteraccion = Date.now(); }, {passive:true}));
+addEventListener("scroll", ()=>{ ultimaInteraccion = Date.now(); if(renderPendiente && scrollY < 60){ clearTimeout(reintento); reintento = setTimeout(renderDatos, 700); } }, {passive:true});
+const firmaDatos = () => [S.finalAbierto, Object.keys(S.jugadores).length, Object.keys(S.reclamos).sort().join(),
+  S.pruebas.map(p=>p.id+(p.anulada?"x":"")).join(), S.votos.map(v=>v.jugador_id+v.prueba_id).sort().join()].join("|");
 function ocupado(){ return descargando || [...document.querySelectorAll("video")].some(v=>!v.paused && !v.ended); }
-function renderDatos(){ if(ocupado()){ renderPendiente = true; return; } renderPendiente = false; render(); }
-["pause","ended"].forEach(ev=>document.addEventListener(ev, ()=>{ if(renderPendiente) setTimeout(renderDatos, 300); }, true));
+const enGaleria = () => fase==="juego" && (tab==="galeria" || tab==="favoritas");
+function avisoNuevas(){
+  const n = pruebasValidas().filter(p=>!idsPintados.has(p.id)).length;
+  let b = $("#nuevas");
+  if(!b){ b = document.createElement("button"); b.id="nuevas"; b.className="nuevas"; b.onclick=()=>{ renderPendiente=false; render(); scrollTo({top:0,behavior:"smooth"}); }; document.body.appendChild(b); }
+  if(n>0){ b.textContent = `↑ ${n} ${n===1?"foto nueva":"fotos nuevas"}`; b.classList.add("show"); }
+}
+function renderDatos(){
+  if(isAdmin && !pin) return;                              // no borrar el PIN mientras se escribe
+  if(firmaDatos()===firmaPintada){ renderPendiente = false; return; }   // nada nuevo
+  clearTimeout(reintento);
+  const tocando = Date.now() - ultimaInteraccion < 2500;
+  if(ocupado() || tocando || (enGaleria() && scrollY > 120)){
+    renderPendiente = true;
+    if(enGaleria()) avisoNuevas();
+    if(!ocupado() && !(enGaleria() && scrollY > 120)) reintento = setTimeout(renderDatos, 2600);
+    return;
+  }
+  renderPendiente = false; render();
+}
+["pause","ended"].forEach(ev=>document.addEventListener(ev, ()=>{ if(renderPendiente){ clearTimeout(reintento); reintento = setTimeout(renderDatos, 600); } }, true));
 
 /* ============ SUBIDA ============ */
+let medidas = [null, null];
 async function comprimir(file){
-  if(!file.type.startsWith("image/")) return file;
+  medidas = [null, null];
+  if(!file.type.startsWith("image/")){
+    // vídeo: solo leemos sus medidas (sin tocar el archivo)
+    medidas = await new Promise(res=>{
+      const v = document.createElement("video"), u = URL.createObjectURL(file);
+      const t = setTimeout(()=>res([null,null]), 4000);
+      v.preload = "metadata"; v.muted = true; v.playsInline = true;
+      v.onloadedmetadata = ()=>{ clearTimeout(t); URL.revokeObjectURL(u); res(v.videoWidth ? [v.videoWidth, v.videoHeight] : [null,null]); };
+      v.onerror = ()=>{ clearTimeout(t); res([null,null]); };
+      v.src = u;
+    });
+    return file;
+  }
   try{
     const bmp = await createImageBitmap(file, {imageOrientation:"from-image"});
     const max = 1600, k = Math.min(1, max/Math.max(bmp.width,bmp.height));
     const c = document.createElement("canvas"); c.width=Math.round(bmp.width*k); c.height=Math.round(bmp.height*k);
     c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);
+    medidas = [c.width, c.height];
     const blob = await new Promise(r=>c.toBlob(r,"image/jpeg",0.82));
     return blob || file;
   }catch(e){ return file; }
@@ -420,7 +494,7 @@ async function comprimir(file){
 async function subirPrueba(retoId, file){
   if(!file) return;
   const esVideo = file.type.startsWith("video/");
-  if(esVideo && file.size > 50*1024*1024){ toast("El vídeo pesa demasiado. Grábalo de menos de 20 segundos."); return; }
+  if(esVideo && file.size > 50*1024*1024){ alert("Este vídeo pesa más de 50 MB, que es el máximo.\n\nGrábalo un poco más corto (unos 15 segundos) o en calidad normal (1080p, no 4K) y vuelve a intentarlo."); return; }
   const m = Number(retoId.slice(1).split("-")[0]);
   subiendo[retoId] = {estado:"up", msg: esVideo ? "Subiendo tu vídeo… no cierres esta pantalla" : "Subiendo tu foto…", prev: esVideo ? "" : URL.createObjectURL(file)}; render();
   const cuerpo = await comprimir(file);
@@ -432,7 +506,7 @@ async function subirPrueba(retoId, file){
     if(!error) ok=true; else { err=error; subiendo[retoId]={...subiendo[retoId],estado:"up",msg:`Reintentando (${i+2}/3)…`}; render(); await new Promise(r=>setTimeout(r,1500*(i+1))); }
   }
   if(ok){
-    const {error} = await sb.from("pruebas").insert({reto_id:retoId, mesa:m, jugador_id:yo.id, foto_path:path, es_video:esVideo});
+    const {error} = await sb.from("pruebas").insert({reto_id:retoId, mesa:m, jugador_id:yo.id, foto_path:path, es_video:esVideo, ancho:medidas[0], alto:medidas[1]});
     if(error){ ok=false; err=error; }
     // si nadie se lo había pedido, queda apuntado a quien lo ha hecho
     else if(/^m[1-4]-[1-8]$/.test(retoId) && !S.reclamos[retoId]) sb.from("reclamos").insert({reto_id:retoId, mesa:m, jugador_id:yo.id}).then(()=>{},()=>{});
@@ -458,14 +532,21 @@ picker.addEventListener("change", recogerFoto);
 picker.addEventListener("input", recogerFoto);
 window.addEventListener("focus", ()=>setTimeout(recogerFoto, 600));
 document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) setTimeout(recogerFoto, 600); });
-function elegirArchivo(retoId, camara){
-  picker.value = ""; fotoTomada = false; retoPendiente = retoId;
-  picker.accept = "image/*,video/*";
-  if(camara) picker.setAttribute("capture","environment"); else picker.removeAttribute("capture");
+let pickerAbierto = 0;
+// modo: "foto" abre la cámara de fotos, "video" la de vídeo, "galeria" el carrete
+function elegirArchivo(retoId, modo){
+  picker.value = ""; fotoTomada = false; retoPendiente = retoId; pickerAbierto = Date.now();
+  picker.accept = modo==="foto" ? "image/*" : modo==="video" ? "video/*" : "image/*,video/*";
+  if(modo==="galeria") picker.removeAttribute("capture"); else picker.setAttribute("capture","environment");
   picker.click();
 }
-function botonesSubir(id, dorado){
-  return `<span class="up-btns"><button class="btn ${dorado?"gold":""} sm" onclick="elegirArchivo('${id}',true)">📷 Cámara</button><button class="btn ghost sm" onclick="elegirArchivo('${id}',false)">🖼 Galería</button></span>`;
+const tipoReto = texto => /v[ií]deo|graba/i.test(texto) ? "video" : "foto";
+function botonesSubir(id, dorado, tipo="foto"){
+  const cls = dorado ? "gold" : "";
+  const foto = `<button class="btn ${cls} sm" onclick="elegirArchivo('${id}','foto')">📷 Foto</button>`;
+  const video = `<button class="btn ${tipo==="ambos"?"ghost":cls} sm" onclick="elegirArchivo('${id}','video')">🎥 Grabar vídeo</button>`;
+  const gal = `<button class="btn ghost sm" onclick="elegirArchivo('${id}','galeria')">🖼 Galería</button>`;
+  return `<span class="up-btns">${tipo==="video" ? video : tipo==="ambos" ? foto+video : foto}${gal}</span>`;
 }
 async function borrarMia(id){
   if(!confirm("¿Borrar esta foto? No se puede deshacer.")) return;
@@ -481,7 +562,13 @@ async function pedirReto(retoId){
   else toast("¡Es tuyo! Cuando lo hagas, sube la prueba");
   refrescar("reclamos");
 }
+let votando = false;
 async function votar(pruebaId){
+  if(votando) return;            // evita dobles toques
+  votando = true;
+  try{ await votarAhora(pruebaId); } finally { votando = false; }
+}
+async function votarAhora(pruebaId){
   if(misVotos().some(v=>v.prueba_id===pruebaId)){
     const {error} = await sb.rpc("quitar_voto",{p_prueba:pruebaId, p_token:yo.token});
     toast(error ? "No se ha podido quitar" : "Corazón devuelto");
@@ -490,7 +577,7 @@ async function votar(pruebaId){
   const {error} = await sb.from("votos").insert({jugador_id:yo.id, prueba_id:pruebaId});
   if(error){
     const msg = error.message||"";
-    toast(msg.includes("propia mesa") ? "No puedes votar a tu propia mesa" : msg.includes("corazones") ? `Ya has usado tus ${maxHearts()} corazones` : msg.includes("duplicate") ? "Ya le has dado tu corazón" : "No se ha podido votar");
+    toast(msg.includes("ya no está") ? "Esa foto ya no está" : msg.includes("propia mesa") ? "No puedes votar a tu propia mesa" : msg.includes("corazones") ? `Ya has usado tus ${maxHearts()} corazones` : msg.includes("duplicate") ? "Ya le has dado tu corazón" : "No se ha podido votar");
   } else toast(esNovio(yo) ? "💛 ¡Favorita!" : "❤ Corazón enviado");
   await cargar("votos"); render();
 }
@@ -607,8 +694,10 @@ function cabecera(){
   </nav>`;
 }
 
-function tarjetaReto(r, esFinal=false){
-  const pr = pruebasValidas().filter(p=>p.reto_id===r.id);
+function tarjetaReto(r){
+  const esFinal = r.tipo==="final" || r.tipo==="boda";
+  const tipo = r.tipo==="boda" ? "ambos" : tipoReto(r.texto);
+  const pr = r.tipo==="boda" ? pruebasValidas().filter(esBoda) : pruebasValidas().filter(p=>p.reto_id===r.id);
   const hecho = pr.length>0;
   const rec = S.reclamos[r.id];
   const recJ = rec ? S.jugadores[rec.jugador_id] : null;
@@ -616,23 +705,23 @@ function tarjetaReto(r, esFinal=false){
   const up = subiendo[r.id];
   let foot = "";
   if(up){
-    foot = (up.prev ? `<img class="preview" src="${up.prev}" alt="">` : "") + `<span class="status ${up.estado}">${esc(up.msg)}</span>` + (up.estado==="err" ? botonesSubir(r.id) : "");
+    foot = (up.prev ? `<img class="preview" src="${up.prev}" alt="">` : "") + `<span class="status ${up.estado}">${esc(up.msg)}</span>` + (up.estado==="err" ? botonesSubir(r.id,false,tipo) : "");
   } else if(hecho){
-    const autores=[...new Set(pr.map(p=>S.jugadores[p.jugador_id]?.nombre).filter(Boolean))];
+    const autores=[...new Set(pr.map(p=>{ const n=S.jugadores[p.jugador_id]?.nombre; return n && r.tipo==="boda" && p.mesa!==yo.mesa ? `${n} (${MESAS[p.mesa]})` : n; }).filter(Boolean))];
     foot = `<span class="chip ok">Hecho</span><span class="who">por <b>${esc(autores.join(", ")||"vuestra mesa")}</b></span>
-            <span class="thumbs">${pr.slice(0,3).map(p=>`<span class="th">${mediaTag(p,"")}${p.jugador_id===yo.id?`<button class="del" aria-label="Borrar mi foto" onclick="borrarMia('${p.id}')">✕</button>`:""}</span>`).join("")}</span>
-            ${botonesSubir(r.id)}`;
-  } else if(r.tipo==="mesa" || esFinal){
-    foot = `<span class="chip">${esFinal?"Toda la boda":"Toda la mesa"}</span>${botonesSubir(r.id)}`;
+            <span class="thumbs">${pr.slice(0,3).map(p=>`<span class="th ${p.es_video?"vid":""}">${mediaTag(p,"")}${p.jugador_id===yo.id?`<button class="del" aria-label="Borrar mi foto" onclick="borrarMia('${p.id}')">✕</button>`:""}</span>`).join("")}</span>
+            ${botonesSubir(r.id,false,tipo)}`;
+  } else if(r.tipo!=="individual"){
+    foot = `<span class="chip">${r.tipo==="boda"?"Toda la boda":"Toda la mesa"}</span>${botonesSubir(r.id,false,tipo)}`;
   } else if(esMio){
-    foot = `<span class="who">Es tuyo. Sube tu prueba:</span>${botonesSubir(r.id,true)}`;
+    foot = `<span class="who">Es tuyo. Sube tu prueba:</span>${botonesSubir(r.id,true,tipo)}`;
   } else if(rec){
     foot = `<span class="who">Lo hace <b>${esc(recJ?.nombre||"alguien de tu mesa")}</b></span>`;
   } else {
-    foot = `${botonesSubir(r.id)}<button class="btn ghost sm" onclick="pedirReto('${r.id}')">🙋 Me lo pido</button>`;
+    foot = `${botonesSubir(r.id,false,tipo)}<button class="btn ghost sm" onclick="pedirReto('${r.id}')">🙋 Me lo pido</button>`;
   }
   return `<article class="reto ${hecho?"done":""} ${esFinal?"final":""}">
-    <div class="n">${esFinal?"★":(hecho?"✓":r.n)}</div>
+    <div class="n">${esFinal?(hecho?"✓":"★"):(hecho?"✓":r.n)}</div>
     <div class="t">${esc(r.texto)}</div>
     <div class="foot">${foot}</div>
   </article>`;
@@ -642,8 +731,8 @@ function tarjetaLibre(){
   const id = `m${yo.mesa}-libre`, up = subiendo[id];
   const mias = pruebasValidas().filter(p=>p.reto_id===id && p.jugador_id===yo.id);
   let foot = up
-    ? (up.prev ? `<img class="preview" src="${up.prev}" alt="">` : "") + `<span class="status ${up.estado}">${esc(up.msg)}</span>` + (up.estado==="err" ? botonesSubir(id) : "")
-    : (mias.length ? `<span class="thumbs">${mias.slice(0,3).map(p=>`<span class="th">${mediaTag(p,"")}<button class="del" aria-label="Borrar mi foto" onclick="borrarMia('${p.id}')">✕</button></span>`).join("")}</span>` : "") + botonesSubir(id);
+    ? (up.prev ? `<img class="preview" src="${up.prev}" alt="">` : "") + `<span class="status ${up.estado}">${esc(up.msg)}</span>` + (up.estado==="err" ? botonesSubir(id,false,"ambos") : "")
+    : (mias.length ? `<span class="thumbs">${mias.slice(0,3).map(p=>`<span class="th ${p.es_video?"vid":""}">${mediaTag(p,"")}<button class="del" aria-label="Borrar mi foto" onclick="borrarMia('${p.id}')">✕</button></span>`).join("")}</span>` : "") + botonesSubir(id,false,"ambos");
   return `<article class="reto">
     <div class="n">📸</div>
     <div class="t"><b>Fotos libres.</b> ¿Un momento bonito o gracioso? Súbelo aunque no sea un reto. Sale en la galería, pero no suma para el ranking.</div>
@@ -655,8 +744,9 @@ function vistaRetos(){
   const apuntados = new Set(Object.values(S.jugadores).filter(j=>j.mesa===m).map(j=>String(j.nombre||"").trim().toLowerCase())).size;
   const hechos = completados(m), tot = totalRetos();
   const fin = {id:`m${m}-final`, texto:RETO_FINAL, tipo:"final"};
+  const boda = {id:`m${m}-boda`, texto:RETO_BODA, tipo:"boda"};
   return `
-    ${S.finalAbierto ? `<h2 class="section-title">Reto final de toda la boda</h2>${tarjetaReto(fin,true)}` : ""}
+    ${S.finalAbierto ? `<h2 class="section-title">Retos finales</h2>${tarjetaReto(fin)}${tarjetaReto(boda)}` : ""}
     <div class="notice">${apuntados===1?"De momento hay <b>1</b> apuntado":`Ya sois <b>${apuntados}</b> apuntados`} en la mesa y hay <b>10 retos</b>. Cada uno hace <b>mínimo un reto individual</b>, y los de mesa los hacéis todos juntos. Vosotros decidís quién hace qué.<br>Los retos <b>con los novios</b> están al final: hacedlos cuando estén libres, sin interrumpir la comida.</div>
     <div class="progress-line">${hechos} de ${tot} retos cumplidos</div>
     <div class="bar"><i style="width:${Math.round(hechos/tot*100)}%"></i></div>
@@ -795,8 +885,8 @@ function vistaAdmin(){
     <h2>Marcador</h2>
     ${[1,2,3,4].map(m=>`<div class="claim"><span>${MESAS[m]}</span><b>${completados(m)} / ${totalRetos()}</b></div>`).join("")}
     <h2>Reto final</h2>
-    <p>${S.finalAbierto?"Abierto: todas las mesas lo ven.":"Cerrado. Ábrelo justo antes de dar los premios."}</p>
-    <div class="row"><button class="btn ${S.finalAbierto?"ghost":"gold"}" onclick="adminCall('admin_reto_final',{abierto:${!S.finalAbierto}})">${S.finalAbierto?"Cerrar reto final":"Abrir reto final"}</button></div>
+    <p>${S.finalAbierto?"Abiertos: todas las mesas ven la foto final de mesa y la foto de toda la boda.":"Cerrados. Ábrelos justo antes de dar los premios: foto final de cada mesa con los novios + foto de toda la boda."}</p>
+    <div class="row"><button class="btn ${S.finalAbierto?"ghost":"gold"}" onclick="adminCall('admin_reto_final',{abierto:${!S.finalAbierto}})">${S.finalAbierto?"Cerrar retos finales":"Abrir retos finales"}</button></div>
     <h2>Las 5 más votadas</h2>
     <p>Para que los novios elijan la mesa más graciosa.</p>
     <div class="grid">${top.map(({p,v})=>cell(p,`❤ ${v}`)).join("") || "<p>Aún no hay votos.</p>"}</div>
@@ -837,12 +927,13 @@ document.addEventListener("keydown", e=>{
 
 function render(){
   const app = $("#app");
-  if(isAdmin){ app.innerHTML = vistaAdmin(); return; }
+  if(isAdmin){ app.innerHTML = vistaAdmin(); firmaPintada = firmaDatos(); return; }
   if(fase==="juego" && yo){
     if(yo.mesa===0 && tab==="retos") tab="galeria";
     app.dataset.k = "";
     if(!S.loaded){ app.innerHTML = cabecera() + `<div class="empty">Cargando…</div>`; return; }
     app.innerHTML = cabecera() + (tab==="retos"?vistaRetos():tab==="ranking"?vistaRanking():tab==="favoritas"?vistaFavoritas():vistaGaleria());
+    firmaPintada = firmaDatos(); idsPintados = new Set(pruebasValidas().map(p=>p.id)); $("#nuevas")?.classList.remove("show");
     return;
   }
   // Antes de entrar al juego no se repinta con los datos en directo:
@@ -853,6 +944,28 @@ function render(){
   if(!esNoviosURL && (!mesaURL || !MESAS[mesaURL])){ app.innerHTML = vistaElegirMesa(); return; }
   app.innerHTML = fase==="nombre"?(esNoviosURL?vistaNombreNovios():vistaNombre()):fase==="parentesco"?vistaParentesco():vistaBienvenida();
 }
+
+// Si se publica una versión nueva, los móviles la cogen solos en un momento que no molesta
+// (en la portada o tras un rato sin tocar nada), nunca a mitad de una subida, vídeo o descarga.
+let hayVersionNueva = false;
+async function comprobarVersion(){
+  try{
+    const t = await (await fetch(location.pathname + "?v=" + Date.now(), {cache:"no-store"})).text();
+    const m = t.match(/const VERSION = "([^"]+)"/);
+    if(m && m[1] !== VERSION) hayVersionNueva = true;
+  }catch(e){}
+  aplicarVersion();
+}
+function aplicarVersion(){
+  if(!hayVersionNueva) return;
+  const subiendoAlgo = Object.values(subiendo).some(x=>x.estado==="up");
+  if(subiendoAlgo || descargando || ocupado() || Date.now()-pickerAbierto < 90000) return;
+  const quieto = Date.now() - ultimaInteraccion > 8000;
+  if(fase==="bienvenida" || ((fase==="juego" || isAdmin) && quieto)) location.reload();
+}
+setInterval(comprobarVersion, 180000);
+setInterval(aplicarVersion, 10000);
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) comprobarVersion(); });
 
 (async function init(){
   render();
