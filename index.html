@@ -392,12 +392,28 @@ async function subirPrueba(retoId, file){
   else { subiendo[retoId]={estado:"err",msg:"No se ha podido subir. Comprueba el wifi y vuelve a intentarlo."}; console.error(err); }
   render();
 }
+// Un solo selector de archivos fijo en la página: si se crea al vuelo, algunos móviles
+// lo pierden al abrir la cámara y la foto hecha no llega a subirse.
+let retoPendiente = null, fotoTomada = false;
+const picker = document.createElement("input");
+picker.type = "file"; picker.style.display = "none";
+document.body.appendChild(picker);
+function recogerFoto(){
+  const f = picker.files && picker.files[0];
+  if(!f || !retoPendiente || fotoTomada) return;
+  fotoTomada = true;
+  const id = retoPendiente; retoPendiente = null;
+  subirPrueba(id, f);
+}
+picker.addEventListener("change", recogerFoto);
+picker.addEventListener("input", recogerFoto);
+window.addEventListener("focus", ()=>setTimeout(recogerFoto, 600));
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) setTimeout(recogerFoto, 600); });
 function elegirArchivo(retoId, camara){
-  const inp = document.createElement("input");
-  inp.type="file"; inp.accept="image/*,video/*";
-  if(camara) inp.setAttribute("capture","environment");
-  inp.onchange = () => subirPrueba(retoId, inp.files[0]);
-  inp.click();
+  picker.value = ""; fotoTomada = false; retoPendiente = retoId;
+  picker.accept = "image/*,video/*";
+  if(camara) picker.setAttribute("capture","environment"); else picker.removeAttribute("capture");
+  picker.click();
 }
 function botonesSubir(id, dorado){
   return `<span class="up-btns"><button class="btn ${dorado?"gold":""} sm" onclick="elegirArchivo('${id}',true)">📷 Cámara</button><button class="btn ghost sm" onclick="elegirArchivo('${id}',false)">🖼 Galería</button></span>`;
