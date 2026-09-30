@@ -347,7 +347,7 @@ async function cargar(tabla){
 const pend = new Set(); let tmr;
 function refrescar(tabla){
   pend.add(tabla); clearTimeout(tmr);
-  tmr = setTimeout(async ()=>{ const ts=[...pend]; pend.clear(); await Promise.all(ts.map(cargar)); if(ts.includes("pruebas")) await cargar("jugadores"); render(); }, 250);
+  tmr = setTimeout(async ()=>{ const ts=[...pend]; pend.clear(); await Promise.all(ts.map(cargar)); if(ts.includes("pruebas")) await cargar("jugadores"); renderDatos(); }, 250);
 }
 function suscribir(){
   const ch = sb.channel("boda");
@@ -355,8 +355,16 @@ function suscribir(){
     ch.on("postgres_changes",{event:"*",schema:"public",table:t},()=>refrescar(t));
   });
   ch.subscribe();
-  setInterval(async ()=>{ await cargar(); render(); }, 25000); // red de seguridad
+  setInterval(async ()=>{ await cargar(); renderDatos(); }, 25000); // red de seguridad
+  // al volver a la web (móvil bloqueado, otra app…) se pone al día al momento
+  document.addEventListener("visibilitychange", async ()=>{ if(!document.hidden){ await cargar(); renderDatos(); } });
 }
+
+// Los datos en directo no deben cortar un vídeo que alguien está viendo ni una descarga en curso.
+let renderPendiente = false, descargando = false;
+function ocupado(){ return descargando || [...document.querySelectorAll("video")].some(v=>!v.paused && !v.ended); }
+function renderDatos(){ if(ocupado()){ renderPendiente = true; return; } renderPendiente = false; render(); }
+["pause","ended"].forEach(ev=>document.addEventListener(ev, ()=>{ if(renderPendiente) setTimeout(renderDatos, 300); }, true));
 
 /* ============ SUBIDA ============ */
 async function comprimir(file){
@@ -375,7 +383,7 @@ async function subirPrueba(retoId, file){
   const esVideo = file.type.startsWith("video/");
   if(esVideo && file.size > 50*1024*1024){ toast("El vídeo pesa demasiado. Grábalo de menos de 20 segundos."); return; }
   const m = Number(retoId.slice(1).split("-")[0]);
-  subiendo[retoId] = {estado:"up", msg:"Subiendo tu foto…", prev: esVideo ? "" : URL.createObjectURL(file)}; render();
+  subiendo[retoId] = {estado:"up", msg: esVideo ? "Subiendo tu vídeo… no cierres esta pantalla" : "Subiendo tu foto…", prev: esVideo ? "" : URL.createObjectURL(file)}; render();
   const cuerpo = await comprimir(file);
   const ext = esVideo ? (file.name.split(".").pop()||"mp4").toLowerCase() : "jpg";
   const path = `mesa${m}/${retoId}_${Date.now()}_${Math.random().toString(36).slice(2,7)}.${ext}`;
@@ -432,7 +440,7 @@ async function pedirReto(retoId){
   refrescar("reclamos");
 }
 async function votar(pruebaId){
-  if(yo.mesa===0 && misVotos().some(v=>v.prueba_id===pruebaId)){
+  if(misVotos().some(v=>v.prueba_id===pruebaId)){
     const {error} = await sb.rpc("quitar_voto",{p_prueba:pruebaId, p_token:yo.token});
     toast(error ? "No se ha podido quitar" : "Corazón devuelto");
     await cargar("votos"); render(); return;
@@ -645,8 +653,8 @@ function fotoCard(p, top5){
   if(jurado){
     btn = `<button class="heart gold ${mia?"on":""}" ${(!mia&&quedan<=0)?"disabled":""} onclick="votar('${p.id}')" aria-label="${mia?"Quitar corazón":"Dar un corazón"}">${HEART_SVG}${nv}<span class="sub">· ❤ ${votosDe(p.id)}</span></button>`;
   } else {
-    const propia = p.mesa===yo.mesa, dis = propia || mia || quedan<=0;
-    btn = `<button class="heart ${mia?"on":""}" ${dis?"disabled":""} onclick="votar('${p.id}')" aria-label="${propia?"Es de tu mesa":"Dar un corazón"}">${HEART_SVG}${votosDe(p.id)}</button>`;
+    const propia = p.mesa===yo.mesa, dis = propia || (!mia && quedan<=0);
+    btn = `<button class="heart ${mia?"on":""}" ${dis?"disabled":""} onclick="votar('${p.id}')" aria-label="${propia?"Es de tu mesa":mia?"Quitar corazón":"Dar un corazón"}">${HEART_SVG}${votosDe(p.id)}</button>`;
   }
   const chips = (jurado&&top5.has(p.id)?`<span class="chip ok" style="margin:4px 6px 0 0;display:inline-block">★ Top 5</span>`:"") + (nv>0?`<span class="fav-chip">💛 Favorita de los novios</span>`:"");
   return `<figure class="photo" style="margin:0 0 16px">
@@ -665,7 +673,7 @@ function vistaGaleria(){
   const quedan = maxHearts() - misVotos().length;
   const top5 = top5Ids();
   if(!jurado){
-    return `<div class="hearts-left">Te quedan <b>${quedan} de ${MAX_HEARTS}</b> corazones. Úsalos en las fotos de otras mesas que más te gusten.</div>
+    return `<div class="hearts-left">Te quedan <b>${quedan} de ${MAX_HEARTS}</b> corazones. Úsalos en las fotos de otras mesas que más te gusten (si te equivocas, tócalo otra vez y te lo devuelve).</div>
     ${lista.length===0 ? `<div class="empty">Todavía no hay fotos.<br>¿Quién se estrena?</div>` : lista.map(p=>fotoCard(p,top5)).join("")}`;
   }
   const total = lista.length;
@@ -704,23 +712,33 @@ async function adminCall(fn, args){
   await cargar(); render();
 }
 async function descargarTodo(soloValidas){
+  if(descargando) return;
+  descargando = true;
   const btn = $("#bZip"); btn.disabled = true;
-  if(!window.JSZip){ await new Promise((ok,ko)=>{const s=document.createElement("script"); s.src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"; s.onload=ok; s.onerror=ko; document.head.appendChild(s);}); }
-  const zip = new JSZip(); let i=0;
-  const todas = soloValidas ? pruebasValidas() : S.pruebas;
-  for(const p of todas){
-    i++; btn.textContent = `Descargando ${i}/${todas.length}…`;
-    try{
-      const b = await (await fetch(fotoURL(p.foto_path))).blob();
-      const j = S.jugadores[p.jugador_id];
-      const nom = `${(MESAS[p.mesa]||"mesa").replace(/\s+/g,"-")}/${p.reto_id}_${(j?.nombre||"inv").replace(/[^\wáéíóúñ-]/gi,"")}_${i}.${p.foto_path.split(".").pop()}`;
-      zip.file((p.anulada?"anuladas/":"")+nom, b);
-    }catch(e){ console.error(e); }
+  let fallos = 0;
+  try{
+    if(!window.JSZip){ await new Promise((ok,ko)=>{const s=document.createElement("script"); s.src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"; s.onload=ok; s.onerror=ko; document.head.appendChild(s);}); }
+    const zip = new JSZip(); let i=0;
+    const todas = soloValidas ? pruebasValidas() : S.pruebas;
+    for(const p of todas){
+      i++; btn.textContent = `Descargando ${i}/${todas.length}…`;
+      try{
+        const r = await fetch(fotoURL(p.foto_path)); if(!r.ok) throw new Error(r.status);
+        const b = await r.blob();
+        const j = S.jugadores[p.jugador_id];
+        const nom = `${(MESAS[p.mesa]||"mesa").replace(/\s+/g,"-")}/${p.reto_id}_${(j?.nombre||"inv").replace(/[^\wáéíóúñ-]/gi,"")}_${i}.${p.foto_path.split(".").pop()}`;
+        zip.file((p.anulada?"anuladas/":"")+nom, b);
+      }catch(e){ fallos++; console.error(e); }
+    }
+    btn.textContent = "Preparando el archivo…";
+    const out = await zip.generateAsync({type:"blob"});
+    const a = document.createElement("a"); a.href = URL.createObjectURL(out); a.download = "boda-cristina-sergio.zip"; document.body.appendChild(a); a.click(); a.remove();
+    toast(fallos ? `Descargado, pero ${fallos} no se pudieron bajar. Vuelve a intentarlo con wifi.` : "¡Descarga lista!");
+  }catch(e){ console.error(e); toast("No se ha podido descargar. Comprueba la conexión."); }
+  finally{
+    btn.disabled=false; btn.textContent="Descargar todas las fotos";
+    descargando = false; if(renderPendiente) renderDatos();
   }
-  btn.textContent = "Preparando el archivo…";
-  const out = await zip.generateAsync({type:"blob"});
-  const a = document.createElement("a"); a.href = URL.createObjectURL(out); a.download = "boda-cristina-sergio.zip"; a.click();
-  btn.disabled=false; btn.textContent="Descargar todas las fotos";
 }
 function vistaAdmin(){
   if(!pin) return `<section class="ask"><h2>Panel del organizador</h2><p>Introduce tu PIN.</p>
