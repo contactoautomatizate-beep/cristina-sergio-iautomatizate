@@ -309,7 +309,19 @@ const params = new URLSearchParams(location.search);
 const isAdmin = params.has("admin");
 const esNoviosURL = (params.get("mesa")||"").toLowerCase()==="novios";
 let mesaURL = esNoviosURL ? 0 : (Number(params.get("mesa")) || 0);
-let yo = JSON.parse(localStorage.getItem("boda_cs_jugador") || "null");
+// Cada QR guarda su propia identidad: si escaneas otra mesa, entras en esa mesa.
+const claveYo = () => "boda_cs_jugador_m" + mesaURL;
+function leerYo(){
+  if(!esNoviosURL && !MESAS[mesaURL]) return null;
+  let j = null;
+  try{ j = JSON.parse(localStorage.getItem(claveYo()) || "null"); }catch(e){}
+  if(!j){ // registros antiguos (una sola identidad para todo)
+    try{ const old = JSON.parse(localStorage.getItem("boda_cs_jugador") || "null"); if(old && old.mesa===mesaURL) j = old; }catch(e){}
+  }
+  return j && j.mesa===mesaURL ? j : null;
+}
+function guardarYo(j){ yo = j; localStorage.setItem(claveYo(), JSON.stringify(j)); }
+let yo = leerYo();
 let tab = "retos";
 const S = { jugadores:{}, reclamos:{}, pruebas:[], votos:[], finalAbierto:false, loaded:false };
 const subiendo = {}; // reto_id -> {estado, msg}
@@ -480,11 +492,11 @@ function vistaBienvenidaNovios(){
     <div class="nv-stage">${COUPLE_SVG}${fl}</div>
     <h1 class="names rv" style="--r:4.1s">Cristina<span class="amp">&amp;</span>Sergio</h1>
     <div class="date rv" style="--r:4.3s">Sábado, 3 de octubre de 2026</div>
-    <p class="nv-sub rv" style="--r:4.7s">Esta noche vuestros invitados tienen retos… y todo lo que hagan acabará aquí, solo para vosotros.</p>
+    <p class="nv-sub rv" style="--r:4.7s">Hoy vuestros invitados tienen retos… y todo lo que hagan acabará aquí, solo para vosotros.</p>
     <div class="rv" style="--r:5.2s;margin-top:22px"><button class="btn block gold go" onclick="yo?entrarJuego():paso('nombre')">Ver nuestras fotos</button></div>
   </section>`;
 }
-function entrarJuego(){ fase="juego"; tab="galeria"; render(); scrollTo(0,0); }
+function entrarJuego(){ fase="juego"; tab = yo.mesa===0 ? "galeria" : "retos"; render(); scrollTo(0,0); }
 function vistaNombreNovios(){
   return `
   <section class="ask">
@@ -503,7 +515,7 @@ async function altaNovios(nombre, rel){
   document.querySelectorAll(".ask button").forEach(b=>b.disabled=true);
   const {data,error} = await sb.rpc("alta_jugador",{p_nombre:nombre, p_parentesco:rel, p_mesa:0});
   if(error){ document.querySelectorAll(".ask button").forEach(b=>b.disabled=false); toast("No se ha podido entrar. Comprueba el wifi."); return; }
-  yo = data; localStorage.setItem("boda_cs_jugador", JSON.stringify(yo));
+  guardarYo(data);
   await cargar(); tab="galeria"; fase="juego"; render(); scrollTo(0,0);
 }
 function vistaBienvenida(){
@@ -513,13 +525,13 @@ function vistaBienvenida(){
     ${COUPLE_SVG}
     <h1 class="names rv" style="--r:4.1s">Cristina<span class="amp">&amp;</span>Sergio</h1>
     <div class="date rv" style="--r:4.3s">Sábado, 3 de octubre de 2026</div>
-    <p class="hook rv" style="--r:4.7s">Esta noche hay retos.<br>¿Os atrevéis?</p>
+    <p class="hook rv" style="--r:4.7s">Hoy hay retos.<br>¿Os atrevéis?</p>
     <ul class="rules rv" style="--r:5s">
       <li><b>Cumplir un reto</b> es tan fácil como subir una foto o un vídeo corto.</li>
       <li><b>Todo se ve en directo</b> en la galería, también lo que hacen las demás mesas.</li>
-      <li><b>Dos premios:</b> la mesa que más retos complete y la foto más graciosa de la noche.</li>
+      <li><b>Dos premios:</b> la mesa que más retos complete y la foto más graciosa del día.</li>
     </ul>
-    <div class="rv" style="--r:5.3s"><button class="btn block go" onclick="paso('nombre')">¡Vamos a jugar!</button></div>
+    <div class="rv" style="--r:5.3s"><button class="btn block go" onclick="yo?entrarJuego():paso('nombre')">${yo?`¡A seguir jugando, ${esc(yo.nombre)}!`:"¡Vamos a jugar!"}</button></div>
   </section>`;
 }
 let tmpNombre = "";
@@ -547,7 +559,7 @@ function vistaElegirMesa(){
   <section class="ask">
     <h2>¿En qué mesa estás?</h2>
     <p>Lo normal es entrar escaneando el código de tu mesa. Si no, elígela aquí.</p>
-    ${[1,2,3,4].map(m=>`<button class="btn ghost block" style="margin-top:10px" onclick="mesaURL=${m};paso('bienvenida')">Mesa ${m} · ${MESAS[m]}</button>`).join("")}
+    ${[1,2,3,4].map(m=>`<button class="btn ghost block" style="margin-top:10px" onclick="mesaURL=${m};yo=leerYo();paso('bienvenida')">Mesa ${m} · ${MESAS[m]}</button>`).join("")}
   </section>`;
 }
 
@@ -684,7 +696,7 @@ function vistaGaleria(){
     <div class="filters">${fb.map(([k,l])=>`<button aria-pressed="${filtroMesa===k}" onclick="filtroMesa='${k}';render()">${esc(l)}</button>`).join("")}</div>
     ${filtroMesa==="todas"||filtroMesa==="0" ? tarjetaLibre() : ""}
     ${lista.length===0 ? `<div class="empty">Todavía no hay fotos aquí.<br>Ya llegarán…</div>` : lista.map(p=>fotoCard(p,top5)).join("")}
-    ${total ? `<div class="dl-card"><p>Guardad todas las fotos y vídeos de la noche en un solo archivo, ordenadas por mesa. Mejor con wifi.</p><button class="btn gold block" id="bZip" onclick="descargarTodo(true)">Descargar todas las fotos</button></div>` : ""}`;
+    ${total ? `<div class="dl-card"><p>Guardad todas las fotos y vídeos del día en un solo archivo, ordenadas por mesa. Mejor con wifi.</p><button class="btn gold block" id="bZip" onclick="descargarTodo(true)">Descargar todas las fotos</button></div>` : ""}`;
 }
 function vistaFavoritas(){
   const lista = pruebasValidas();
@@ -781,7 +793,7 @@ async function guardarJugador(){
   const b = $("#bRel"); b.disabled=true; b.textContent="Entrando…";
   const {data,error} = await sb.rpc("alta_jugador",{p_nombre:tmpNombre, p_parentesco:rel, p_mesa:mesaURL});
   if(error){ b.disabled=false; b.textContent="Entrar al juego"; toast("No se ha podido entrar. Comprueba el wifi."); return; }
-  yo = data; localStorage.setItem("boda_cs_jugador", JSON.stringify(yo));
+  guardarYo(data);
   await cargar(); fase="juego"; render(); scrollTo(0,0);
 }
 document.addEventListener("keydown", e=>{
@@ -794,7 +806,6 @@ document.addEventListener("keydown", e=>{
 function render(){
   const app = $("#app");
   if(isAdmin){ app.innerHTML = vistaAdmin(); return; }
-  if(yo && fase!=="juego" && !esNoviosURL) fase = "juego";
   if(fase==="juego" && yo){
     if(yo.mesa===0 && tab==="retos") tab="galeria";
     app.dataset.k = "";
@@ -804,7 +815,7 @@ function render(){
   }
   // Antes de entrar al juego no se repinta con los datos en directo:
   // así no se reinicia el dibujo ni se borra lo que alguien está escribiendo.
-  const k = fase+"|"+mesaURL;
+  const k = fase+"|"+mesaURL+"|"+(yo?yo.id:"");
   if(app.dataset.k===k) return;
   app.dataset.k = k;
   if(!esNoviosURL && (!mesaURL || !MESAS[mesaURL])){ app.innerHTML = vistaElegirMesa(); return; }
@@ -814,7 +825,7 @@ function render(){
 (async function init(){
   render();
   await cargar();
-  if(yo && (!yo.token || !S.jugadores[yo.id])){ yo=null; localStorage.removeItem("boda_cs_jugador"); fase="bienvenida"; }
+  if(yo && (!yo.token || !S.jugadores[yo.id])){ yo=null; localStorage.removeItem(claveYo()); localStorage.removeItem("boda_cs_jugador"); fase="bienvenida"; }
   render();
   suscribir();
 })();
