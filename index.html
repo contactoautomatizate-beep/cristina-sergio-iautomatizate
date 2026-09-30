@@ -163,7 +163,14 @@ footer a{color:var(--gold);font-weight:700;text-decoration:none}
 .float{position:absolute;bottom:18%;font-size:18px;opacity:0;animation:up 5.5s ease-in infinite;pointer-events:none}
 @keyframes up{0%{opacity:0;transform:translateY(0) rotate(0)}15%{opacity:.85}100%{opacity:0;transform:translateY(-190px) rotate(18deg)}}
 .nv-sub{font-size:1.05rem;color:var(--ink-2);margin:10px auto 0;max-width:30ch;line-height:1.5}
-.who{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0 8px}
+.who-pick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0 8px}
+.mesa-tag{display:inline-block;margin:14px auto 0;padding:6px 14px;border-radius:999px;background:var(--beige);font-weight:700;font-size:14px;color:var(--ink)}
+.mesa-hint{font-size:12.5px;color:var(--ink-2);margin-top:6px}
+.swap{font-size:13.5px;color:var(--ink-2);margin:14px 0 0}
+.linkish{border:0;background:none;padding:2px 2px;color:var(--gold);font-weight:700;font-size:inherit;text-decoration:underline;min-height:0}
+.heart.own,.heart.full{opacity:.5}
+.inapp{background:#FFF6E5;border:1px solid #E9CF97;border-radius:14px;padding:12px 14px;margin:14px 0 0;font-size:14px;text-align:left;color:var(--ink)}
+.inapp .btn{margin-top:10px}
 .admin .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
 .admin .cell{background:#fff;border:1px solid var(--beige-2);border-radius:12px;overflow:hidden;font-size:12px}
 .admin .cell .media{width:100%;height:120px;object-fit:cover;display:block;background:var(--beige)}
@@ -321,6 +328,16 @@ function leerYo(){
   return j && j.mesa===mesaURL ? j : null;
 }
 function guardarYo(j){ yo = j; localStorage.setItem(claveYo(), JSON.stringify(j)); }
+function cambiarPersona(){
+  if(!confirm(`¿Salir como ${yo.nombre}? Podrás entrar con otro nombre en este móvil.`)) return;
+  localStorage.removeItem(claveYo()); localStorage.removeItem("boda_cs_jugador");
+  yo = null; tmpNombre = ""; paso("nombre");
+}
+function avisoOtraApp(){
+  if(!enOtraApp) return "";
+  return `<div class="inapp"><b>Ábrelo en Chrome o Safari.</b> Estás dentro de otra app y aquí la cámara y tu registro pueden fallar. Toca el menú (⋯) y elige «Abrir en el navegador», o copia el enlace:<br><button class="btn ghost sm" onclick="navigator.clipboard&&navigator.clipboard.writeText(location.href).then(()=>toast('Enlace copiado. Pégalo en Chrome o Safari'))">Copiar enlace</button></div>`;
+}
+const cambiarLink = () => yo ? `<p class="swap">¿No eres ${esc(yo.nombre)}? <button class="linkish" onclick="event.stopPropagation();cambiarPersona()">Cambiar</button></p>` : "";
 let yo = leerYo();
 let tab = "retos";
 const S = { jugadores:{}, reclamos:{}, pruebas:[], votos:[], finalAbierto:false, loaded:false };
@@ -338,10 +355,20 @@ function completados(m){
 }
 const totalRetos = () => 10 + (S.finalAbierto ? 1 : 0);
 const misVotos = () => yo ? S.votos.filter(v=>v.jugador_id===yo.id) : [];
-const esVotoNovios = v => S.jugadores[v.jugador_id]?.mesa===0;
+const esNovio = j => !!j && j.mesa===0 && ["la novia","el novio"].includes(String(j.parentesco||"").trim().toLowerCase());
+const esVotoNovios = v => esNovio(S.jugadores[v.jugador_id]);
 const votosDe = id => S.votos.filter(v=>v.prueba_id===id && !esVotoNovios(v)).length; // solo invitados
 const votosNov = id => S.votos.filter(v=>v.prueba_id===id && esVotoNovios(v)).length;
-const maxHearts = () => yo?.mesa===0 ? 10 : MAX_HEARTS;
+const maxHearts = () => esNovio(yo) ? 10 : MAX_HEARTS;
+// Las 5 con más corazones de invitados; si hay empate en el 5º puesto, entran todas las empatadas.
+function topInvitados(){
+  const l = pruebasValidas().map(p=>({p,v:votosDe(p.id)})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v);
+  if(l.length<=5) return l;
+  const corte = l[4].v; return l.filter((x,i)=>i<5 || x.v===corte);
+}
+const retosPendientes = () => Object.values(S.reclamos).filter(r=>r.jugador_id===yo?.id && !pruebasValidas().some(p=>p.reto_id===r.reto_id)).length;
+// Navegadores dentro de otras apps (Instagram, Facebook, TikTok…): no guardan bien la sesión y la cámara falla.
+const enOtraApp = /Instagram|FBAN|FBAV|FB_IAB|Line\/|MicroMessenger|Snapchat|musical_ly|Bytedance|TikTok|WhatsApp/i.test(navigator.userAgent||"");
 let filtroMesa = "todas";
 const mediaTag = (p, cls="media") => p.es_video
   ? `<video class="${cls}" src="${fotoURL(p.foto_path)}#t=0.1" preload="metadata" controls playsinline></video>`
@@ -407,6 +434,8 @@ async function subirPrueba(retoId, file){
   if(ok){
     const {error} = await sb.from("pruebas").insert({reto_id:retoId, mesa:m, jugador_id:yo.id, foto_path:path, es_video:esVideo});
     if(error){ ok=false; err=error; }
+    // si nadie se lo había pedido, queda apuntado a quien lo ha hecho
+    else if(/^m[1-4]-[1-8]$/.test(retoId) && !S.reclamos[retoId]) sb.from("reclamos").insert({reto_id:retoId, mesa:m, jugador_id:yo.id}).then(()=>{},()=>{});
   }
   if(ok){ subiendo[retoId]={estado:"ok",msg:"¡Listo! Ya está en la galería"}; toast(retoId.endsWith("-libre") ? "¡Foto subida! 📸" : "¡Reto cumplido! 🎉"); refrescar("pruebas"); setTimeout(()=>{delete subiendo[retoId]; render();},4000); }
   else { subiendo[retoId]={estado:"err",msg:"No se ha podido subir. Comprueba el wifi y vuelve a intentarlo."}; console.error(err); }
@@ -445,6 +474,7 @@ async function borrarMia(id){
   refrescar("pruebas");
 }
 async function pedirReto(retoId){
+  if(retosPendientes() >= 2){ toast("Ya tienes 2 retos pedidos sin hacer. Haz uno primero 😉"); return; }
   const m = Number(retoId.slice(1).split("-")[0]);
   const {error} = await sb.from("reclamos").insert({reto_id:retoId, mesa:m, jugador_id:yo.id});
   if(error){ await cargar("reclamos"); await cargar("jugadores"); const r=S.reclamos[retoId]; toast(r ? `Se lo ha pedido ${S.jugadores[r.jugador_id]?.nombre||"otra persona"}` : "No se ha podido, inténtalo otra vez"); }
@@ -461,7 +491,7 @@ async function votar(pruebaId){
   if(error){
     const msg = error.message||"";
     toast(msg.includes("propia mesa") ? "No puedes votar a tu propia mesa" : msg.includes("corazones") ? `Ya has usado tus ${maxHearts()} corazones` : msg.includes("duplicate") ? "Ya le has dado tu corazón" : "No se ha podido votar");
-  } else toast(yo.mesa===0 ? "💛 ¡Favorita!" : "❤ Corazón enviado");
+  } else toast(esNovio(yo) ? "💛 ¡Favorita!" : "❤ Corazón enviado");
   await cargar("votos"); render();
 }
 
@@ -488,12 +518,13 @@ const COUPLE_SVG = `
 function vistaBienvenidaNovios(){
   const fl = [["♥",8,0],["♪",78,1.2],["♥",62,2.6],["♫",18,3.4],["♥",88,4.3]].map(([c,x,d])=>`<span class="float" style="left:${x}%;animation-delay:${4.8+d}s;color:${c==="♥"?"#D99A8A":"#B08D52"}">${c}</span>`).join("");
   return `
-  <section class="welcome intro" onclick="this.classList.add('skip')">
+  <section class="welcome intro ${yo?"skip":""}" onclick="this.classList.add('skip')">
     <div class="nv-stage">${COUPLE_SVG}${fl}</div>
     <h1 class="names rv" style="--r:4.1s">Cristina<span class="amp">&amp;</span>Sergio</h1>
     <div class="date rv" style="--r:4.3s">Sábado, 3 de octubre de 2026</div>
     <p class="nv-sub rv" style="--r:4.7s">Hoy vuestros invitados tienen retos… y todo lo que hagan acabará aquí, solo para vosotros.</p>
-    <div class="rv" style="--r:5.2s;margin-top:22px"><button class="btn block gold go" onclick="yo?entrarJuego():paso('nombre')">Ver nuestras fotos</button></div>
+    <div class="rv" style="--r:5.2s;margin-top:22px"><button class="btn block gold go" onclick="yo?entrarJuego():paso('nombre')">Ver nuestras fotos</button>${cambiarLink()}</div>
+    ${avisoOtraApp()}
   </section>`;
 }
 function entrarJuego(){ fase="juego"; tab = yo.mesa===0 ? "galeria" : "retos"; render(); scrollTo(0,0); }
@@ -501,8 +532,8 @@ function vistaNombreNovios(){
   return `
   <section class="ask">
     <h2>¿Quién eres?</h2>
-    <p>Cada uno tendrá sus 10 corazones.</p>
-    <div class="who">
+    <p>Cristina y Sergio tenéis 10 corazones dorados cada uno. Padrinos y madrinas, 3.</p>
+    <div class="who-pick">
       <button class="btn" onclick="altaNovios('Cristina','la novia')">Soy Cristina</button>
       <button class="btn" onclick="altaNovios('Sergio','el novio')">Soy Sergio</button>
     </div>
@@ -521,17 +552,19 @@ async function altaNovios(nombre, rel){
 function vistaBienvenida(){
   if(esNoviosURL) return vistaBienvenidaNovios();
   return `
-  <section class="welcome intro" onclick="this.classList.add('skip')">
+  <section class="welcome intro ${yo?"skip":""}" onclick="this.classList.add('skip')">
     ${COUPLE_SVG}
     <h1 class="names rv" style="--r:4.1s">Cristina<span class="amp">&amp;</span>Sergio</h1>
     <div class="date rv" style="--r:4.3s">Sábado, 3 de octubre de 2026</div>
+    <div class="rv" style="--r:4.5s"><span class="mesa-tag">Mesa ${mesaURL} · ${MESAS[mesaURL]}</span><div class="mesa-hint">¿No es tu mesa? Escanea el código de la tuya.</div></div>
+    ${avisoOtraApp()}
     <p class="hook rv" style="--r:4.7s">Hoy hay retos.<br>¿Os atrevéis?</p>
     <ul class="rules rv" style="--r:5s">
       <li><b>Cumplir un reto</b> es tan fácil como subir una foto o un vídeo corto.</li>
       <li><b>Todo se ve en directo</b> en la galería, también lo que hacen las demás mesas.</li>
       <li><b>Dos premios:</b> la mesa que más retos complete y la foto más graciosa del día.</li>
     </ul>
-    <div class="rv" style="--r:5.3s"><button class="btn block go" onclick="yo?entrarJuego():paso('nombre')">${yo?`¡A seguir jugando, ${esc(yo.nombre)}!`:"¡Vamos a jugar!"}</button></div>
+    <div class="rv" style="--r:5.3s"><button class="btn block go" onclick="yo?entrarJuego():paso('nombre')">${yo?`¡A seguir jugando, ${esc(yo.nombre)}!`:"¡Vamos a jugar!"}</button>${cambiarLink()}</div>
   </section>`;
 }
 let tmpNombre = "";
@@ -567,7 +600,7 @@ function cabecera(){
   return `
   <header class="top">
     <h1 class="names">Cristina<span class="amp">&amp;</span>Sergio</h1>
-    <div class="me"><b>${esc(yo.nombre)}</b>, ${esc(yo.parentesco)} · ${yo.mesa===0 ? MESAS[0] : `Mesa ${yo.mesa}, ${MESAS[yo.mesa]}`}</div>
+    <div class="me"><b>${esc(yo.nombre)}</b>, ${esc(yo.parentesco)} · ${yo.mesa===0 ? MESAS[0] : `Mesa ${yo.mesa}, ${MESAS[yo.mesa]}`} · <button class="linkish" onclick="cambiarPersona()">cambiar</button></div>
   </header>
   <nav class="tabs" role="tablist">
     ${(yo.mesa===0 ? [["galeria","Todas"],["favoritas","Favoritas"],["ranking","Ranking"]] : [["retos","Mi mesa"],["ranking","Ranking"],["galeria","Galería"]]).map(([k,l])=>`<button role="tab" aria-selected="${tab===k}" onclick="tab='${k}';render();scrollTo(0,0)">${l}</button>`).join("")}
@@ -596,7 +629,7 @@ function tarjetaReto(r, esFinal=false){
   } else if(rec){
     foot = `<span class="who">Lo hace <b>${esc(recJ?.nombre||"alguien de tu mesa")}</b></span>`;
   } else {
-    foot = `<button class="btn sm" onclick="pedirReto('${r.id}')">Me lo pido</button>`;
+    foot = `${botonesSubir(r.id)}<button class="btn ghost sm" onclick="pedirReto('${r.id}')">🙋 Me lo pido</button>`;
   }
   return `<article class="reto ${hecho?"done":""} ${esFinal?"final":""}">
     <div class="n">${esFinal?"★":(hecho?"✓":r.n)}</div>
@@ -619,7 +652,7 @@ function tarjetaLibre(){
 }
 function vistaRetos(){
   const m = yo.mesa, lista = retosDe(m);
-  const apuntados = Object.values(S.jugadores).filter(j=>j.mesa===m).length;
+  const apuntados = new Set(Object.values(S.jugadores).filter(j=>j.mesa===m).map(j=>String(j.nombre||"").trim().toLowerCase())).size;
   const hechos = completados(m), tot = totalRetos();
   const fin = {id:`m${m}-final`, texto:RETO_FINAL, tipo:"final"};
   return `
@@ -652,12 +685,10 @@ function vistaRanking(){
 }
 
 const HEART_SVG = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.1 4.3 2.4.7-1.3 2.2-2.4 4.3-2.4 3.7 0 5.8 3.9 4.3 7.2C19.5 16.4 12 21 12 21z"/></svg>`;
-function top5Ids(){
-  return new Set(pruebasValidas().map(p=>({id:p.id,v:votosDe(p.id)})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).slice(0,5).map(x=>x.id));
-}
+function top5Ids(){ return new Set(topInvitados().map(x=>x.p.id)); }
 function fotoCard(p, top5){
   const j = S.jugadores[p.jugador_id];
-  const jurado = yo.mesa===0;
+  const jurado = esNovio(yo);
   const votadas = new Set(misVotos().map(v=>v.prueba_id));
   const quedan = maxHearts() - misVotos().length;
   const mia = votadas.has(p.id), nv = votosNov(p.id);
@@ -665,8 +696,9 @@ function fotoCard(p, top5){
   if(jurado){
     btn = `<button class="heart gold ${mia?"on":""}" ${(!mia&&quedan<=0)?"disabled":""} onclick="votar('${p.id}')" aria-label="${mia?"Quitar corazón":"Dar un corazón"}">${HEART_SVG}${nv}<span class="sub">· ❤ ${votosDe(p.id)}</span></button>`;
   } else {
-    const propia = p.mesa===yo.mesa, dis = propia || (!mia && quedan<=0);
-    btn = `<button class="heart ${mia?"on":""}" ${dis?"disabled":""} onclick="votar('${p.id}')" aria-label="${propia?"Es de tu mesa":mia?"Quitar corazón":"Dar un corazón"}">${HEART_SVG}${votosDe(p.id)}</button>`;
+    const propia = p.mesa===yo.mesa, lleno = !mia && quedan<=0;
+    const accion = propia ? `toast('No puedes votar las fotos de tu propia mesa')` : lleno ? `toast('Ya has usado tus ${maxHearts()} corazones. Quita uno para dárselo a otra')` : `votar('${p.id}')`;
+    btn = `<button class="heart ${mia?"on":""} ${propia?"own":lleno?"full":""}" onclick="${accion}" aria-label="${propia?"Es de tu mesa":mia?"Quitar corazón":"Dar un corazón"}">${HEART_SVG}${votosDe(p.id)}</button>`;
   }
   const chips = (jurado&&top5.has(p.id)?`<span class="chip ok" style="margin:4px 6px 0 0;display:inline-block">★ Top 5</span>`:"") + (nv>0?`<span class="fav-chip">💛 Favorita de los novios</span>`:"");
   return `<figure class="photo" style="margin:0 0 16px">
@@ -680,7 +712,7 @@ function fotoCard(p, top5){
   </figure>`;
 }
 function vistaGaleria(){
-  const jurado = yo.mesa===0;
+  const jurado = yo.mesa===0, novio = esNovio(yo);
   let lista = pruebasValidas();
   const quedan = maxHearts() - misVotos().length;
   const top5 = top5Ids();
@@ -692,7 +724,7 @@ function vistaGaleria(){
   if(filtroMesa!=="todas") lista = lista.filter(p=>p.mesa===Number(filtroMesa));
   const fb = [["todas",`Todas (${total})`],...[1,2,3,4,0].map(m=>[String(m), m===0?"Vuestra mesa":MESAS[m]])];
   return `
-    <div class="hearts-left">Aquí está <b>todo</b> lo que suben vuestros invitados. Tenéis <b>${quedan} de 10</b> corazones dorados para marcar vuestras favoritas (si cambiáis de idea, tocad otra vez y os lo devuelve).</div>
+    <div class="hearts-left">Aquí está <b>todo</b> lo que suben los invitados. ${novio?`Te quedan <b>${quedan} de 10</b> corazones dorados para marcar tus favoritas`:`Te quedan <b>${quedan} de ${MAX_HEARTS}</b> corazones para las fotos de las mesas que más te gusten`} (si cambias de idea, tócalo otra vez y te lo devuelve).</div>
     <div class="filters">${fb.map(([k,l])=>`<button aria-pressed="${filtroMesa===k}" onclick="filtroMesa='${k}';render()">${esc(l)}</button>`).join("")}</div>
     ${filtroMesa==="todas"||filtroMesa==="0" ? tarjetaLibre() : ""}
     ${lista.length===0 ? `<div class="empty">Todavía no hay fotos aquí.<br>Ya llegarán…</div>` : lista.map(p=>fotoCard(p,top5)).join("")}
@@ -701,13 +733,13 @@ function vistaGaleria(){
 function vistaFavoritas(){
   const lista = pruebasValidas();
   const favs = lista.map(p=>({p,v:votosNov(p.id)})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v);
-  const top = lista.map(p=>({p,v:votosDe(p.id)})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).slice(0,5);
+  const top = topInvitados();
   const top5 = new Set(top.map(x=>x.p.id));
   return `
     <h2 class="section-title">Vuestras favoritas</h2>
     ${favs.length ? favs.map(x=>fotoCard(x.p,top5)).join("") : `<div class="empty">Aún no habéis marcado ninguna.<br>Dadle 💛 en «Todas».</div>`}
     <h2 class="section-title" style="margin-top:28px">Las 5 más votadas por los invitados</h2>
-    <div class="notice">De aquí sale el premio a la <b>foto más graciosa</b>: elegid vosotros la ganadora.</div>
+    <div class="notice">De aquí sale el premio a la <b>foto más graciosa</b>: elegid vosotros la ganadora.${top.length>5?` Hay empate en el último puesto, por eso salen ${top.length}.`:""}</div>
     ${top.length ? top.map(x=>fotoCard(x.p,top5)).join("") : `<div class="empty">Todavía no hay votos.</div>`}`;
 }
 
@@ -756,7 +788,7 @@ function vistaAdmin(){
   if(!pin) return `<section class="ask"><h2>Panel del organizador</h2><p>Introduce tu PIN.</p>
     <input class="field" id="inPin" inputmode="numeric" maxlength="6" placeholder="······">
     <button class="btn block" onclick="adminLogin()">Entrar</button></section>`;
-  const top = pruebasValidas().map(p=>({p,v:votosDe(p.id)})).sort((a,b)=>b.v-a.v).slice(0,5);
+  const top = topInvitados();
   const cell = (p,extra="") => { const j=S.jugadores[p.jugador_id]; return `<div class="cell ${p.anulada?"off":""}">${mediaTag(p)}<div class="i"><b>${esc(j?.nombre||"")}</b> · Mesa ${p.mesa}<br>${esc(textoReto(p.reto_id)).slice(0,60)}…<br>${extra}</div></div>`; };
   return `<section class="admin">
     <header class="top"><h1 class="names">Cristina<span class="amp">&amp;</span>Sergio</h1><div class="me">Panel del organizador</div></header>
