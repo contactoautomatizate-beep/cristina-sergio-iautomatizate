@@ -289,22 +289,22 @@ const RETOS = {
   "Hazte una foto con alguien a quien acabes de conocer hoy.",
   "Consigue que alguien te baile una canción (vídeo).",
   "Consigue que tres personas hagan contigo una pose de modelo.",
-  "Encuentra a alguien que tenga una foto antigua de la novia en el móvil y hazle una foto.",
-  "Pregúntale a alguien por su recuerdo favorito con la novia y graba su respuesta.",
+  "Haz que tres personas brinden contigo (foto).",
   "Échate un pulso con el padrino (vídeo).",
+  "Hazte un selfie con el mayor número de personas posible: mínimo 10.",
   "Con los novios: hazte una foto con los novios formando un corazón con las manos.",
-  "Con los novios: saca a bailar a Sergio 20 segundos (vídeo).",
+  "Con los novios: consigue que Cristina y Sergio te den un beso en la mejilla a la vez (foto).",
   "Foto de toda la mesa haciendo un corazón con las manos.",
   "Cara de póker: foto de 5 personas de la mesa mirando a cámara sin sonreír."],
  3:[
   "Hazte una foto con tres personas poniendo la misma cara.",
-  "Haz que tres personas brinden contigo (foto).",
+  "Monta una conga de al menos 8 personas y dad una vuelta por el salón (vídeo).",
   "Convence a alguien para hacerse una foto contigo sin explicarle por qué.",
   "Consigue que alguien grite «¡Vivan los novios!» (vídeo).",
   "Hazte una foto imitando a la novia.",
   "Hazte una foto con una pareja que lleve muchos años casada.",
+  "Misión secreta: «roba» un bolso de la mesa de al lado sin que se den cuenta y hazte una foto con el botín (¡y devuélvelo!).",
   "Con los novios: consigue que la novia diga una palabra que hayáis elegido en la mesa, sin pedírselo directamente (vídeo).",
-  "Con los novios: consigue que Sergio te enseñe su mejor paso de baile (vídeo).",
   "La peor foto posible: haced a propósito la foto más horrible de la boda.",
   "Foto congelada: toda la mesa quieta como si se hubiera parado el tiempo."],
  4:[
@@ -312,16 +312,16 @@ const RETOS = {
   "Encuentra a alguien con una anécdota graciosa de la novia y graba cómo la cuenta.",
   "Haz que alguien de otra mesa te acompañe a brindar (foto).",
   "Encuentra a alguien que conozca a la novia desde hace más de 10 años y hazte una foto con esa persona.",
-  "Consigue que alguien escriba una frase para los novios y sube la foto.",
+  "Arranca un «¡Vivan los novios!» y consigue que lo grite todo el salón (vídeo).",
   "Encuentra a la persona que haya viajado desde más lejos y hazte una foto con ella.",
   "Con los novios: haz reír a la novia (vídeo).",
-  "Con los novios: pregúntale a Sergio qué fue lo primero que le enamoró de Cristina y graba su respuesta.",
+  "Con los novios: saca a bailar a Sergio y haced juntos el paso de baile más ridículo que se os ocurra (vídeo).",
   "Arrancad un aplauso de la nada y conseguid que se una todo el salón (vídeo).",
   "Reunid a 5 personas que tengan algo en común y haceos una foto (contad qué es)."]
 };
 const RETO_FINAL = "Foto final de toda la mesa junta con Cristina y Sergio en el centro.";
 const RETO_BODA = "Foto de TODOS los invitados juntos con los novios y, después, un grito de «¡Vivan los novios!» grabado en vídeo. Basta con que una mesa lo suba y cuenta para todas.";
-const VERSION = "2026-09-30.4";
+const VERSION = "2026-09-30.5";
 
 function retosDe(m){
   return RETOS[m].map((t,i)=>({id:`m${m}-${i+1}`, n:i+1, texto:t, tipo: i>=8 ? "mesa":"individual"}));
@@ -741,13 +741,12 @@ function tarjetaLibre(){
 }
 function vistaRetos(){
   const m = yo.mesa, lista = retosDe(m);
-  const apuntados = new Set(Object.values(S.jugadores).filter(j=>j.mesa===m).map(j=>String(j.nombre||"").trim().toLowerCase())).size;
   const hechos = completados(m), tot = totalRetos();
   const fin = {id:`m${m}-final`, texto:RETO_FINAL, tipo:"final"};
   const boda = {id:`m${m}-boda`, texto:RETO_BODA, tipo:"boda"};
   return `
     ${S.finalAbierto ? `<h2 class="section-title">Retos finales</h2>${tarjetaReto(fin)}${tarjetaReto(boda)}` : ""}
-    <div class="notice">${apuntados===1?"De momento hay <b>1</b> apuntado":`Ya sois <b>${apuntados}</b> apuntados`} en la mesa y hay <b>10 retos</b>. Cada uno hace <b>mínimo un reto individual</b>, y los de mesa los hacéis todos juntos. Vosotros decidís quién hace qué.<br>Los retos <b>con los novios</b> están al final: hacedlos cuando estén libres, sin interrumpir la comida.</div>
+    <div class="notice"><b>Elegid vuestra misión</b>, hacedla y subid la foto o el vídeo: <b>¡misión cumplida!</b> 🎉<br>Podéis hacerlas en cualquier momento del día: en la sobremesa, en la hora loca o cuando queráis.</div>
     <div class="progress-line">${hechos} de ${tot} retos cumplidos</div>
     <div class="bar"><i style="width:${Math.round(hechos/tot*100)}%"></i></div>
     <h2 class="section-title">Individuales</h2>
