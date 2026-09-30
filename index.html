@@ -191,6 +191,27 @@ footer a{color:var(--gold);font-weight:700;text-decoration:none}
 .th.vid::after{content:"";position:absolute;left:50%;top:50%;margin:-9px 0 0 -6px;border-left:14px solid #fff;border-top:9px solid transparent;border-bottom:9px solid transparent;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5));pointer-events:none}
 .nuevas{position:fixed;left:50%;top:calc(76px + env(safe-area-inset-top,0px));transform:translate(-50%,-20px);opacity:0;z-index:15;border:0;border-radius:999px;background:var(--gold);color:#fff;font-weight:700;font-size:14px;padding:10px 18px;box-shadow:0 6px 20px rgba(59,51,42,.28);transition:.3s;pointer-events:none}
 .nuevas.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.coment{width:100%;border:1px solid var(--beige-2);border-radius:12px;background:var(--paper);padding:10px 12px;font-size:14px;margin:0 0 4px}
+.coment:focus{outline:none;border-color:var(--gold)}
+.coment-txt{grid-column:1/-1;font-size:14.5px;color:var(--ink);background:var(--paper);border-radius:10px;padding:8px 11px;margin-top:2px}
+.hora{font-size:12px;color:var(--ink-2);opacity:.8}
+.acc{display:flex;gap:16px;grid-column:1/-1}
+.acc button{border:0;background:none;padding:4px 0;font-size:13px;font-weight:600;color:var(--gold)}
+.acc .del-link{color:var(--err)}
+.fin-card{background:linear-gradient(135deg,#FFF8E9,#F3E6C8);border:1.5px solid var(--gold);border-radius:16px;padding:16px 16px 14px;margin:14px 0 18px;text-align:center}
+.fin-card .big{font-family:var(--serif);font-size:26px;line-height:1.15;color:var(--ink)}
+.fin-card p{margin:6px 0 0;font-size:14px;color:var(--ink-2)}
+.medal{font-size:13px;font-weight:700;color:#7A5A20;margin-left:6px}
+.celebra{position:fixed;inset:0;z-index:30;background:rgba(43,36,29,.55);display:flex;align-items:center;justify-content:center;padding:24px;animation:fadein .3s}
+@keyframes fadein{from{opacity:0}}
+.celebra .box{position:relative;background:var(--paper);border-radius:22px;padding:28px 22px 22px;max-width:360px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3);animation:pop .45s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{transform:scale(.7);opacity:0}}
+.celebra .trofeo{font-size:58px;line-height:1}
+.celebra h2{font-family:var(--serif);font-size:32px;margin:8px 0 4px}
+.celebra .pos{display:inline-block;margin:6px 0 10px;padding:6px 14px;border-radius:999px;background:var(--gold);color:#fff;font-weight:700}
+.celebra p{color:var(--ink-2);font-size:15px;margin:0 0 18px}
+.confeti{position:fixed;top:-12px;width:9px;height:14px;border-radius:2px;z-index:31;pointer-events:none;animation:cae linear forwards}
+@keyframes cae{to{transform:translateY(110vh) rotate(720deg)}}
 .admin .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
 .admin .cell{background:#fff;border:1px solid var(--beige-2);border-radius:12px;overflow:hidden;font-size:12px}
 .admin .cell .media{width:100%;height:120px;object-fit:cover;display:block;background:var(--beige)}
@@ -321,7 +342,7 @@ const RETOS = {
 };
 const RETO_FINAL = "Foto final de toda la mesa junta con Cristina y Sergio en el centro.";
 const RETO_BODA = "Foto de TODOS los invitados juntos con los novios y, después, un grito de «¡Vivan los novios!» grabado en vídeo. Basta con que una mesa lo suba y cuenta para todas.";
-const VERSION = "2026-09-30.5";
+const VERSION = "2026-09-30.6";
 
 function retosDe(m){
   return RETOS[m].map((t,i)=>({id:`m${m}-${i+1}`, n:i+1, texto:t, tipo: i>=8 ? "mesa":"individual"}));
@@ -390,10 +411,37 @@ function topInvitados(){
   if(l.length<=5) return l;
   const corte = l[4].v; return l.filter((x,i)=>i<5 || x.v===corte);
 }
-const retosPendientes = () => Object.values(S.reclamos).filter(r=>r.jugador_id===yo?.id && !pruebasValidas().some(p=>p.reto_id===r.reto_id)).length;
 // Navegadores dentro de otras apps (Instagram, Facebook, TikTok…): no guardan bien la sesión y la cámara falla.
 const enOtraApp = /Instagram|FBAN|FBAV|FB_IAB|Line\/|MicroMessenger|Snapchat|musical_ly|Bytedance|TikTok|WhatsApp/i.test(navigator.userAgent||"");
 let filtroMesa = "todas";
+const hora = iso => { try{ return new Date(iso).toLocaleString("es-ES",{timeZone:"Europe/Madrid",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}); }catch(e){ return ""; } };
+// Mesas que han completado sus 10 retos, en el orden en que terminaron
+function terminadas(){
+  const res = [];
+  for(const m of [1,2,3,4]){
+    let fin = 0, ok = true;
+    for(let n=1;n<=10;n++){
+      const t = pruebasValidas().filter(p=>p.reto_id===`m${m}-${n}`).map(p=>+new Date(p.created_at));
+      if(!t.length){ ok = false; break; }
+      fin = Math.max(fin, Math.min(...t));
+    }
+    if(ok) res.push({m, fin});
+  }
+  return res.sort((a,b)=>a.fin-b.fin).map((x,i)=>({...x, pos:i+1}));
+}
+const ORD = ["","primera","segunda","tercera","cuarta"];
+const MEDALLA = ["","🥇","🥈","🥉","🏅"];
+function celebrar(pos){
+  const k = "boda_cs_fin_m"+yo.mesa; if(localStorage.getItem(k)) return; localStorage.setItem(k,"1");
+  const d = document.createElement("div"); d.className="celebra";
+  d.innerHTML = `<div class="box"><div class="trofeo">${MEDALLA[pos]}</div><h2>¡Misión cumplida!</h2>
+    <div class="pos">Sois la ${ORD[pos]} mesa en terminar</div>
+    <p>Habéis completado todos los retos. Ahora solo falta que se elija la foto con más corazones de todas… ¡seguid votando!</p>
+    <button class="btn gold block" onclick="this.closest('.celebra').remove()">¡Vamos!</button></div>`;
+  document.body.appendChild(d);
+  const colores = ["#B08D52","#E7CFC3","#9AA58B","#D99A8A","#EDE3D3"];
+  for(let i=0;i<60;i++){ const c=document.createElement("span"); c.className="confeti"; c.style.left=Math.random()*100+"vw"; c.style.background=colores[i%5]; c.style.animationDuration=(2.2+Math.random()*2)+"s"; c.style.animationDelay=(Math.random()*.8)+"s"; document.body.appendChild(c); setTimeout(()=>c.remove(),5000); }
+}
 // Cada foto reserva su hueco con sus medidas reales: así la galería no da saltos al actualizarse.
 const proporcion = p => (p.ancho && p.alto) ? `${p.ancho}/${p.alto}` : (p.es_video ? "9/16" : "3/4");
 const mediaTag = (p, cls="media") => {
@@ -442,7 +490,7 @@ let renderPendiente = false, descargando = false, firmaPintada = "", idsPintados
 addEventListener("scroll", ()=>{ ultimaInteraccion = Date.now(); if(renderPendiente && scrollY < 60){ clearTimeout(reintento); reintento = setTimeout(renderDatos, 700); } }, {passive:true});
 const firmaDatos = () => [S.finalAbierto, Object.keys(S.jugadores).length, Object.keys(S.reclamos).sort().join(),
   S.pruebas.map(p=>p.id+(p.anulada?"x":"")).join(), S.votos.map(v=>v.jugador_id+v.prueba_id).sort().join()].join("|");
-function ocupado(){ return descargando || [...document.querySelectorAll("video")].some(v=>!v.paused && !v.ended); }
+function ocupado(){ return descargando || /INPUT|TEXTAREA/.test(document.activeElement?.tagName||"") || [...document.querySelectorAll("video")].some(v=>!v.paused && !v.ended); }
 const enGaleria = () => fase==="juego" && (tab==="galeria" || tab==="favoritas");
 function avisoNuevas(){
   const n = pruebasValidas().filter(p=>!idsPintados.has(p.id)).length;
@@ -496,28 +544,28 @@ async function subirPrueba(retoId, file){
   const esVideo = file.type.startsWith("video/");
   if(esVideo && file.size > 50*1024*1024){ alert("Este vídeo pesa más de 50 MB, que es el máximo.\n\nGrábalo un poco más corto (unos 15 segundos) o en calidad normal (1080p, no 4K) y vuelve a intentarlo."); return; }
   const m = Number(retoId.slice(1).split("-")[0]);
+  const comentario = (borradores[retoId] || "").trim().slice(0,200) || null;
   subiendo[retoId] = {estado:"up", msg: esVideo ? "Subiendo tu vídeo… no cierres esta pantalla" : "Subiendo tu foto…", prev: esVideo ? "" : URL.createObjectURL(file)}; render();
   const cuerpo = await comprimir(file);
   const ext = esVideo ? (file.name.split(".").pop()||"mp4").toLowerCase() : "jpg";
   const path = `mesa${m}/${retoId}_${Date.now()}_${Math.random().toString(36).slice(2,7)}.${ext}`;
-  let ok=false, err;
+  let ok=false, err, subidaId=null;
   for(let i=0;i<3 && !ok;i++){
     const {error} = await sb.storage.from(BUCKET).upload(path, cuerpo, {contentType: esVideo ? file.type : "image/jpeg", upsert:true});
     if(!error) ok=true; else { err=error; subiendo[retoId]={...subiendo[retoId],estado:"up",msg:`Reintentando (${i+2}/3)…`}; render(); await new Promise(r=>setTimeout(r,1500*(i+1))); }
   }
   if(ok){
-    const {error} = await sb.from("pruebas").insert({reto_id:retoId, mesa:m, jugador_id:yo.id, foto_path:path, es_video:esVideo, ancho:medidas[0], alto:medidas[1]});
-    if(error){ ok=false; err=error; }
-    // si nadie se lo había pedido, queda apuntado a quien lo ha hecho
-    else if(/^m[1-4]-[1-8]$/.test(retoId) && !S.reclamos[retoId]) sb.from("reclamos").insert({reto_id:retoId, mesa:m, jugador_id:yo.id}).then(()=>{},()=>{});
+    const {data:fila, error} = await sb.from("pruebas").insert({reto_id:retoId, mesa:m, jugador_id:yo.id, foto_path:path, es_video:esVideo, ancho:medidas[0], alto:medidas[1], comentario}).select("id").single();
+    if(error){ ok=false; err=error; } else { subidaId = fila?.id; delete borradores[retoId]; }
   }
-  if(ok){ subiendo[retoId]={estado:"ok",msg:"¡Listo! Ya está en la galería"}; toast(retoId.endsWith("-libre") ? "¡Foto subida! 📸" : "¡Reto cumplido! 🎉"); refrescar("pruebas"); setTimeout(()=>{delete subiendo[retoId]; render();},4000); }
+  if(ok){ subiendo[retoId]={estado:"ok",msg:"¡Listo! Ya está en la galería", pid: comentario ? null : subidaId}; toast(retoId.endsWith("-libre") ? "¡Foto subida! 📸" : "¡Reto cumplido! 🎉"); refrescar("pruebas"); setTimeout(()=>{ if(subiendo[retoId]?.estado==="ok"){ delete subiendo[retoId]; renderDatosYa(); } },9000); }
   else { subiendo[retoId]={estado:"err",msg:"No se ha podido subir. Comprueba el wifi y vuelve a intentarlo."}; console.error(err); }
   render();
 }
 // Un solo selector de archivos fijo en la página: si se crea al vuelo, algunos móviles
 // lo pierden al abrir la cámara y la foto hecha no llega a subirse.
 let retoPendiente = null, fotoTomada = false;
+const borradores = {}; // comentarios a medio escribir, por reto
 const picker = document.createElement("input");
 picker.type = "file"; picker.style.display = "none";
 document.body.appendChild(picker);
@@ -548,19 +596,21 @@ function botonesSubir(id, dorado, tipo="foto"){
   const gal = `<button class="btn ghost sm" onclick="elegirArchivo('${id}','galeria')">🖼 Galería</button>`;
   return `<span class="up-btns">${tipo==="video" ? video : tipo==="ambos" ? foto+video : foto}${gal}</span>`;
 }
+async function comentar(id){
+  const p = S.pruebas.find(x=>x.id===id);
+  const t = prompt("Comentario (quién sale, quién lo ha hecho, qué pasó…):", p?.comentario || "");
+  if(t===null) return;
+  const {error} = await sb.rpc("poner_comentario",{p_id:id, p_token:yo.token, p_texto:t});
+  toast(error ? "No se ha podido guardar" : "Comentario guardado");
+  Object.keys(subiendo).forEach(k=>{ if(subiendo[k].pid===id) delete subiendo[k]; });
+  await cargar("pruebas"); render();
+}
+function renderDatosYa(){ if(!ocupado()) render(); else renderPendiente = true; }
 async function borrarMia(id){
   if(!confirm("¿Borrar esta foto? No se puede deshacer.")) return;
   const {error} = await sb.rpc("borrar_prueba",{p_id:id, p_token:yo.token});
   toast(error ? "No se ha podido borrar" : "Foto borrada");
   refrescar("pruebas");
-}
-async function pedirReto(retoId){
-  if(retosPendientes() >= 2){ toast("Ya tienes 2 retos pedidos sin hacer. Haz uno primero 😉"); return; }
-  const m = Number(retoId.slice(1).split("-")[0]);
-  const {error} = await sb.from("reclamos").insert({reto_id:retoId, mesa:m, jugador_id:yo.id});
-  if(error){ await cargar("reclamos"); await cargar("jugadores"); const r=S.reclamos[retoId]; toast(r ? `Se lo ha pedido ${S.jugadores[r.jugador_id]?.nombre||"otra persona"}` : "No se ha podido, inténtalo otra vez"); }
-  else toast("¡Es tuyo! Cuando lo hagas, sube la prueba");
-  refrescar("reclamos");
 }
 let votando = false;
 async function votar(pruebaId){
@@ -699,13 +749,10 @@ function tarjetaReto(r){
   const tipo = r.tipo==="boda" ? "ambos" : tipoReto(r.texto);
   const pr = r.tipo==="boda" ? pruebasValidas().filter(esBoda) : pruebasValidas().filter(p=>p.reto_id===r.id);
   const hecho = pr.length>0;
-  const rec = S.reclamos[r.id];
-  const recJ = rec ? S.jugadores[rec.jugador_id] : null;
-  const esMio = rec && rec.jugador_id===yo.id;
   const up = subiendo[r.id];
   let foot = "";
   if(up){
-    foot = (up.prev ? `<img class="preview" src="${up.prev}" alt="">` : "") + `<span class="status ${up.estado}">${esc(up.msg)}</span>` + (up.estado==="err" ? botonesSubir(r.id,false,tipo) : "");
+    foot = (up.prev ? `<img class="preview" src="${up.prev}" alt="">` : "") + `<span class="status ${up.estado}">${esc(up.msg)}</span>` + (up.estado==="err" ? botonesSubir(r.id,false,tipo) : "") + (up.pid ? `<button class="btn ghost sm" onclick="comentar('${up.pid}')">✏️ Añadir comentario</button>` : "");
   } else if(hecho){
     const autores=[...new Set(pr.map(p=>{ const n=S.jugadores[p.jugador_id]?.nombre; return n && r.tipo==="boda" && p.mesa!==yo.mesa ? `${n} (${MESAS[p.mesa]})` : n; }).filter(Boolean))];
     foot = `<span class="chip ok">Hecho</span><span class="who">por <b>${esc(autores.join(", ")||"vuestra mesa")}</b></span>
@@ -713,12 +760,8 @@ function tarjetaReto(r){
             ${botonesSubir(r.id,false,tipo)}`;
   } else if(r.tipo!=="individual"){
     foot = `<span class="chip">${r.tipo==="boda"?"Toda la boda":"Toda la mesa"}</span>${botonesSubir(r.id,false,tipo)}`;
-  } else if(esMio){
-    foot = `<span class="who">Es tuyo. Sube tu prueba:</span>${botonesSubir(r.id,true,tipo)}`;
-  } else if(rec){
-    foot = `<span class="who">Lo hace <b>${esc(recJ?.nombre||"alguien de tu mesa")}</b></span>`;
   } else {
-    foot = `${botonesSubir(r.id,false,tipo)}<button class="btn ghost sm" onclick="pedirReto('${r.id}')">🙋 Me lo pido</button>`;
+    foot = botonesSubir(r.id,false,tipo);
   }
   return `<article class="reto ${hecho?"done":""} ${esFinal?"final":""}">
     <div class="n">${esFinal?(hecho?"✓":"★"):(hecho?"✓":r.n)}</div>
@@ -732,21 +775,23 @@ function tarjetaLibre(){
   const mias = pruebasValidas().filter(p=>p.reto_id===id && p.jugador_id===yo.id);
   let foot = up
     ? (up.prev ? `<img class="preview" src="${up.prev}" alt="">` : "") + `<span class="status ${up.estado}">${esc(up.msg)}</span>` + (up.estado==="err" ? botonesSubir(id,false,"ambos") : "")
-    : (mias.length ? `<span class="thumbs">${mias.slice(0,3).map(p=>`<span class="th ${p.es_video?"vid":""}">${mediaTag(p,"")}<button class="del" aria-label="Borrar mi foto" onclick="borrarMia('${p.id}')">✕</button></span>`).join("")}</span>` : "") + botonesSubir(id,false,"ambos");
+    : (mias.length ? `<span class="thumbs">${mias.slice(0,3).map(p=>`<span class="th ${p.es_video?"vid":""}">${mediaTag(p,"")}<button class="del" aria-label="Borrar mi foto" onclick="borrarMia('${p.id}')">✕</button></span>`).join("")}</span>` : "") + `<input class="coment" id="com-${id}" maxlength="200" value="${esc(borradores[id]||"")}" oninput="borradores['${id}']=this.value" placeholder="Comentario (opcional): quién sale, qué pasa…">` + botonesSubir(id,false,"ambos");
   return `<article class="reto">
     <div class="n">📸</div>
-    <div class="t"><b>Fotos libres.</b> ¿Un momento bonito o gracioso? Súbelo aunque no sea un reto. Sale en la galería, pero no suma para el ranking.</div>
+    <div class="t"><b>Fotos libres.</b> ¿Un momento bonito o gracioso? Súbelo aunque no sea un reto, con un comentario si quieres. Sale en la galería, pero no suma para el ranking.</div>
     <div class="foot">${foot}</div>
   </article>`;
 }
 function vistaRetos(){
   const m = yo.mesa, lista = retosDe(m);
   const hechos = completados(m), tot = totalRetos();
-  const fin = {id:`m${m}-final`, texto:RETO_FINAL, tipo:"final"};
+  const final = {id:`m${m}-final`, texto:RETO_FINAL, tipo:"final"};
   const boda = {id:`m${m}-boda`, texto:RETO_BODA, tipo:"boda"};
+  const fin = terminadas().find(x=>x.m===m);
   return `
-    ${S.finalAbierto ? `<h2 class="section-title">Retos finales</h2>${tarjetaReto(fin)}${tarjetaReto(boda)}` : ""}
-    <div class="notice"><b>Elegid vuestra misión</b>, hacedla y subid la foto o el vídeo: <b>¡misión cumplida!</b> 🎉<br>Podéis hacerlas en cualquier momento del día: en la sobremesa, en la hora loca o cuando queráis.</div>
+    ${S.finalAbierto ? `<h2 class="section-title">Retos finales</h2>${tarjetaReto(final)}${tarjetaReto(boda)}` : ""}
+    ${fin ? `<div class="fin-card"><div class="big">${MEDALLA[fin.pos]} ¡Misión cumplida!</div><p>Sois la <b>${ORD[fin.pos]} mesa</b> en completar todos los retos. Ahora solo falta que se elija la foto con más corazones de todas.</p></div>` : ""}
+    <div class="notice"><b>Entre toda la mesa</b>, completad todas las misiones. Da igual quién las haga o desde qué móvil: cada foto queda guardada con el nombre de quien la sube.<br>Podéis hacerlas en cualquier momento del día: en la sobremesa, en la hora loca o cuando queráis.</div>
     <div class="progress-line">${hechos} de ${tot} retos cumplidos</div>
     <div class="bar"><i style="width:${Math.round(hechos/tot*100)}%"></i></div>
     <h2 class="section-title">Individuales</h2>
@@ -759,16 +804,17 @@ function vistaRetos(){
 
 function vistaRanking(){
   const tot = totalRetos();
-  const filas = [1,2,3,4].map(m=>({m, c:completados(m)})).sort((a,b)=>b.c-a.c || a.m-b.m);
+  const ter = terminadas();
+  const filas = [1,2,3,4].map(m=>({m, c:completados(m), t:ter.find(x=>x.m===m)})).sort((a,b)=>b.c-a.c || (a.t&&b.t ? a.t.pos-b.t.pos : 0) || a.m-b.m);
   return `
     <h2 class="section-title">¿Cómo van las mesas?</h2>
     ${filas.map(f=>`
       <div class="rank-row ${f.m===yo.mesa?"mine":""}">
-        <div class="h"><span class="nm">${MESAS[f.m]}</span><span class="sc">${f.c} / ${tot}</span></div>
+        <div class="h"><span class="nm">${MESAS[f.m]}${f.t?`<span class="medal">${MEDALLA[f.t.pos]} ${f.t.pos}ª en terminar</span>`:""}</span><span class="sc">${f.c} / ${tot}</span></div>
         <div class="bar"><i style="width:${Math.round(f.c/tot*100)}%"></i></div>
       </div>`).join("")}
     <div class="prizes">
-      <p><b>Mesa más cumplidora:</b> la que más retos complete. No cuenta quién termina antes, y si empatan, ganan las dos.</p>
+      <p><b>Mesa más cumplidora:</b> la que más retos complete. Si empatan, ganan las dos.</p>
       <p><b>Mesa más graciosa:</b> Cristina y Sergio la eligen entre las 5 fotos con más corazones de la galería.</p>
     </div>`;
 }
@@ -793,10 +839,11 @@ function fotoCard(p, top5){
   return `<figure class="photo" style="margin:0 0 16px">
     ${mediaTag(p)}
     <figcaption class="cap">
-      <div><div class="by">${esc(j?.nombre||"Invitado")}</div><div class="rel">${esc(j?.parentesco||"")} · ${MESAS[p.mesa]||""}</div>${chips}</div>
+      <div><div class="by">${esc(j?.nombre||"Invitado")}</div><div class="rel">${esc(j?.parentesco||"")} · ${MESAS[p.mesa]||""}</div><div class="hora">${hora(p.created_at)}</div>${chips}</div>
       ${btn}
       <div class="rt">${esc(textoReto(p.reto_id))}</div>
-      ${p.jugador_id===yo.id?`<button class="del-link" onclick="borrarMia('${p.id}')">Borrar mi foto</button>`:""}
+      ${p.comentario?`<div class="coment-txt">💬 ${esc(p.comentario)}</div>`:""}
+      ${p.jugador_id===yo.id?`<div class="acc"><button onclick="comentar('${p.id}')">✏️ ${p.comentario?"Editar comentario":"Añadir comentario"}</button><button class="del-link" onclick="borrarMia('${p.id}')">Borrar mi foto</button></div>`:""}
     </figcaption>
   </figure>`;
 }
@@ -844,28 +891,65 @@ async function adminCall(fn, args){
   if(error) toast("Error: "+error.message); else toast("Hecho");
   await cargar(); render();
 }
+const cargarScript = src => new Promise((ok,ko)=>{ const e=document.createElement("script"); e.src=src; e.onload=ok; e.onerror=ko; document.head.appendChild(e); });
+const sinTildes = t => String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^\x20-\x7E]/g,"");
+const limpio = t => String(t||"").replace(/[\\/:*?"<>|]/g,"").trim();
+function partesFecha(iso){
+  const d = new Date(iso), f = new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Madrid",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).formatToParts(d);
+  const g = k => f.find(x=>x.type===k)?.value || "00";
+  return {Y:g("year"),M:g("month"),D:g("day"),h:g("hour")==="24"?"00":g("hour"),mi:g("minute"),s:g("second")};
+}
+const nombreReto = id => { const n = id.split("-")[1]; return n==="libre"?"Foto libre":n==="final"?"Foto final de mesa":n==="boda"?"Foto de toda la boda":`Reto ${n}`; };
+// Mete dentro de cada foto la fecha y hora, "Boda Cristina y Sergio", quién la hizo y el comentario (EXIF)
+async function conDatos(blob, p){
+  try{
+    if(!window.piexif || !/jpe?g$/i.test(p.foto_path)) return blob;
+    const buf = new Uint8Array(await blob.arrayBuffer()); let bin = "";
+    for(let i=0;i<buf.length;i+=32768) bin += String.fromCharCode.apply(null, buf.subarray(i,i+32768));
+    const t = partesFecha(p.created_at), j = S.jugadores[p.jugador_id];
+    const fecha = `${t.Y}:${t.M}:${t.D} ${t.h}:${t.mi}:${t.s}`;
+    const desc = sinTildes(`Boda Cristina y Sergio - 3 oct 2026 - ${MESAS[p.mesa]} - ${textoReto(p.reto_id)}`);
+    const zeroth = {[piexif.ImageIFD.ImageDescription]:desc, [piexif.ImageIFD.Artist]:sinTildes(j?.nombre||"Invitado"), [piexif.ImageIFD.DateTime]:fecha, [piexif.ImageIFD.Software]:"iAutomatizate"};
+    const exif = {[piexif.ExifIFD.DateTimeOriginal]:fecha, [piexif.ExifIFD.DateTimeDigitized]:fecha};
+    if(p.comentario) exif[piexif.ExifIFD.UserComment] = "ASCII\0\0\0" + sinTildes(p.comentario);
+    const nuevo = piexif.insert(piexif.dump({"0th":zeroth, "Exif":exif}), bin);
+    const out = new Uint8Array(nuevo.length); for(let i=0;i<nuevo.length;i++) out[i] = nuevo.charCodeAt(i) & 255;
+    return new Blob([out], {type:"image/jpeg"});
+  }catch(e){ console.error(e); return blob; }
+}
 async function descargarTodo(soloValidas){
   if(descargando) return;
   descargando = true;
   const btn = $("#bZip"); btn.disabled = true;
   let fallos = 0;
   try{
-    if(!window.JSZip){ await new Promise((ok,ko)=>{const s=document.createElement("script"); s.src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"; s.onload=ok; s.onerror=ko; document.head.appendChild(s);}); }
-    const zip = new JSZip(); let i=0;
+    if(!window.JSZip) await cargarScript("https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js");
+    if(!window.piexif) await cargarScript("https://cdn.jsdelivr.net/npm/piexifjs@1.0.6/piexif.js").catch(()=>{});
+    const zip = new JSZip(), raiz = "Boda Cristina y Sergio - 3 oct 2026/"; let i=0;
     const todas = soloValidas ? pruebasValidas() : S.pruebas;
-    for(const p of todas){
+    const filas = [["Archivo","Fecha","Hora","Mesa","Quién la subió","Qué es de los novios","Reto","Comentario","Corazones","Corazones de los novios"]];
+    const usados = new Set();
+    for(const p of [...todas].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at))){
       i++; btn.textContent = `Descargando ${i}/${todas.length}…`;
       try{
         const r = await fetch(fotoURL(p.foto_path)); if(!r.ok) throw new Error(r.status);
-        const b = await r.blob();
-        const j = S.jugadores[p.jugador_id];
-        const nom = `${(MESAS[p.mesa]||"mesa").replace(/\s+/g,"-")}/${p.reto_id}_${(j?.nombre||"inv").replace(/[^\wáéíóúñ-]/gi,"")}_${i}.${p.foto_path.split(".").pop()}`;
-        zip.file((p.anulada?"anuladas/":"")+nom, b);
+        let b = await r.blob();
+        if(!p.es_video) b = await conDatos(b, p);
+        const j = S.jugadores[p.jugador_id], t = partesFecha(p.created_at);
+        const ext = p.foto_path.split(".").pop();
+        let base = limpio(`${t.Y}-${t.M}-${t.D} ${t.h}.${t.mi}.${t.s} - ${j?.nombre||"Invitado"} - ${nombreReto(p.reto_id)}`), nom = base, k = 2;
+        while(usados.has(nom)) nom = `${base} (${k++})`;
+        usados.add(nom);
+        const carpeta = (p.anulada ? "Borradas/" : "") + limpio(`${p.mesa===0?"Mesa de los novios":`Mesa ${p.mesa} - ${MESAS[p.mesa]}`}`) + "/";
+        zip.file(raiz + carpeta + nom + "." + ext, b, {date: new Date(p.created_at)});
+        filas.push([carpeta+nom+"."+ext, `${t.D}/${t.M}/${t.Y}`, `${t.h}:${t.mi}`, MESAS[p.mesa], j?.nombre||"", j?.parentesco||"", textoReto(p.reto_id), p.comentario||"", votosDe(p.id), votosNov(p.id)]);
       }catch(e){ fallos++; console.error(e); }
     }
+    const csv = "\uFEFF" + filas.map(f=>f.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(";")).join("\r\n");
+    zip.file(raiz + "Listado de fotos.csv", csv);
     btn.textContent = "Preparando el archivo…";
     const out = await zip.generateAsync({type:"blob"});
-    const a = document.createElement("a"); a.href = URL.createObjectURL(out); a.download = "boda-cristina-sergio.zip"; document.body.appendChild(a); a.click(); a.remove();
+    const a = document.createElement("a"); a.href = URL.createObjectURL(out); a.download = "Boda Cristina y Sergio.zip"; document.body.appendChild(a); a.click(); a.remove();
     toast(fallos ? `Descargado, pero ${fallos} no se pudieron bajar. Vuelve a intentarlo con wifi.` : "¡Descarga lista!");
   }catch(e){ console.error(e); toast("No se ha podido descargar. Comprueba la conexión."); }
   finally{
@@ -882,16 +966,13 @@ function vistaAdmin(){
   return `<section class="admin">
     <header class="top"><h1 class="names">Cristina<span class="amp">&amp;</span>Sergio</h1><div class="me">Panel del organizador</div></header>
     <h2>Marcador</h2>
-    ${[1,2,3,4].map(m=>`<div class="claim"><span>${MESAS[m]}</span><b>${completados(m)} / ${totalRetos()}</b></div>`).join("")}
+    ${[1,2,3,4].map(m=>{ const t=terminadas().find(x=>x.m===m); return `<div class="claim"><span>${MESAS[m]}${t?` ${MEDALLA[t.pos]} ${t.pos}ª en terminar`:""}</span><b>${completados(m)} / ${totalRetos()}</b></div>`; }).join("")}
     <h2>Reto final</h2>
     <p>${S.finalAbierto?"Abiertos: todas las mesas ven la foto final de mesa y la foto de toda la boda.":"Cerrados. Ábrelos justo antes de dar los premios: foto final de cada mesa con los novios + foto de toda la boda."}</p>
     <div class="row"><button class="btn ${S.finalAbierto?"ghost":"gold"}" onclick="adminCall('admin_reto_final',{abierto:${!S.finalAbierto}})">${S.finalAbierto?"Cerrar retos finales":"Abrir retos finales"}</button></div>
     <h2>Las 5 más votadas</h2>
     <p>Para que los novios elijan la mesa más graciosa.</p>
     <div class="grid">${top.map(({p,v})=>cell(p,`❤ ${v}`)).join("") || "<p>Aún no hay votos.</p>"}</div>
-    <h2>Retos pedidos</h2>
-    <p>Si alguien se pide un reto y no lo hace, suéltalo aquí.</p>
-    ${Object.values(S.reclamos).map(r=>`<div class="claim"><span>Mesa ${r.mesa} · ${esc(S.jugadores[r.jugador_id]?.nombre||"")}: ${esc(textoReto(r.reto_id)).slice(0,50)}…</span><button class="btn ghost sm" onclick="adminCall('admin_soltar_reto',{p_reto:'${r.reto_id}'})">Soltar</button></div>`).join("") || "<p>Ninguno todavía.</p>"}
     <h2>Todas las pruebas</h2>
     <div class="row"><button class="btn" id="bZip" onclick="descargarTodo()">Descargar todas las fotos</button></div>
     <div class="grid">${S.pruebas.map(p=>cell(p,`<button class="btn ghost sm" style="margin-top:6px" onclick="confirm('¿Borrar esta foto?')&&adminCall('admin_borrar',{p_id:'${p.id}'})">Borrar</button>`)).join("")}</div>
@@ -933,6 +1014,7 @@ function render(){
     if(!S.loaded){ app.innerHTML = cabecera() + `<div class="empty">Cargando…</div>`; return; }
     app.innerHTML = cabecera() + (tab==="retos"?vistaRetos():tab==="ranking"?vistaRanking():tab==="favoritas"?vistaFavoritas():vistaGaleria());
     firmaPintada = firmaDatos(); idsPintados = new Set(pruebasValidas().map(p=>p.id)); $("#nuevas")?.classList.remove("show");
+    if(yo.mesa>=1){ const t = terminadas().find(x=>x.m===yo.mesa); if(t) celebrar(t.pos); }
     return;
   }
   // Antes de entrar al juego no se repinta con los datos en directo:
