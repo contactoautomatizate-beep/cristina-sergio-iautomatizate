@@ -147,6 +147,23 @@ footer a{color:var(--gold);font-weight:700;text-decoration:none}
 /* Admin */
 .admin h2{font-size:30px;margin:24px 0 6px}
 .admin .row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.heart.gold{border-color:#DCC596;color:#8A6A2F}
+.heart.gold.on{background:#F3E6C8;border-color:var(--gold);color:#7A5A20}
+.heart .sub{font-weight:500;font-size:12px;color:var(--ink-2);margin-left:2px}
+.fav-chip{display:inline-block;margin-top:4px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:#F3E6C8;color:#7A5A20}
+.filters{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px;margin:0 -2px;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.filters button{flex:0 0 auto;border:1px solid var(--beige-2);background:var(--paper);border-radius:999px;padding:7px 13px;font:inherit;font-size:13px;color:var(--ink-2);min-height:36px}
+.filters button[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:#fff}
+.dl-card{background:#fff;border:1px solid var(--beige-2);border-radius:16px;padding:16px;margin:22px 0 8px;text-align:center}
+.dl-card p{font-size:14px;color:var(--ink-2);margin:0 0 12px}
+.nv-stage{position:relative;width:260px;max-width:78%;margin:0 auto}
+.nv-stage .couple{width:100%;max-width:100%;margin:4px 0 0}
+.nv-stage .couple .dance{animation:sway 2.6s ease-in-out 4.6s infinite}
+.float{position:absolute;bottom:18%;font-size:18px;opacity:0;animation:up 5.5s ease-in infinite;pointer-events:none}
+@keyframes up{0%{opacity:0;transform:translateY(0) rotate(0)}15%{opacity:.85}100%{opacity:0;transform:translateY(-190px) rotate(18deg)}}
+.nv-sub{font-size:1.05rem;color:var(--ink-2);margin:10px auto 0;max-width:30ch;line-height:1.5}
+.who{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0 8px}
 .admin .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
 .admin .cell{background:#fff;border:1px solid var(--beige-2);border-radius:12px;overflow:hidden;font-size:12px}
 .admin .cell .media{width:100%;height:120px;object-fit:cover;display:block;background:var(--beige)}
@@ -176,7 +193,8 @@ footer a{color:var(--gold);font-weight:700;text-decoration:none}
 @media (prefers-reduced-motion:reduce){
   .couple .ln{animation:none;stroke-dashoffset:0;opacity:1}
   .couple .wash{animation:none;opacity:1}
-  .couple .dance,.btn.go{animation:none}
+  .couple .dance,.btn.go,.nv-stage .couple .dance{animation:none}
+  .float{display:none}
   .rv{animation:none;opacity:1;transform:none}
 }
 </style>
@@ -230,49 +248,49 @@ const MESAS = {
 };
 const RETOS = {
  1:[
-  "Haz un brindis con un padrino y sube la foto.",
-  "Encuentra a la persona de la familia del novio que ha venido desde más lejos y hazte una foto con ella.",
-  "Hazte un selfie con alguien de la familia de Sergio a quien no conocías de antes.",
-  "Hazte una foto con un camarero o camarera.",
-  "Dibuja a los novios en una servilleta y sube la foto.",
-  "Graba un vídeo de 15 segundos contando una anécdota divertida de Cristina que Sergio no conozca.",
-  "Con los novios: saca a bailar a Sergio 20 segundos para darle la bienvenida a la familia (vídeo).",
-  "Con los novios: pregúntale a Sergio qué es lo que más le gusta de la familia de Cristina y graba su respuesta.",
-  "Foto de toda la mesa haciendo un corazón con las manos.",
-  "Foto de toda la mesa junto a la familia del novio: las dos familias en una sola foto."],
+  "Hazte una foto con 3 personas de generaciones diferentes.",
+  "Hazte una foto con alguien de otra mesa.",
+  "Consigue que alguien te preste un accesorio y llévalo puesto 5 minutos (foto).",
+  "Consigue que dos personas que no se conocen se hagan una foto juntas.",
+  "Haz que alguien baile contigo sin música (vídeo).",
+  "Hazte una foto con una persona que haya tenido un papel importante en la vida de la novia.",
+  "Con los novios: hazte una foto con la novia haciendo una pose absurda.",
+  "Con los novios: misión secreta. Llama a la novia «señora» durante 10 minutos sin que se dé cuenta de que es un reto (grábalo).",
+  "Foto de toda la mesa saltando a la vez.",
+  "Foto de toda la mesa como si fuerais la portada de Vogue."],
  2:[
-  "Haz un brindis con una madrina y sube la foto.",
-  "Encuentra a quien conoce a Cristina desde hace más años y hazte una foto con esa persona.",
-  "Hazte un selfie con alguien de la familia de Cristina a quien no conocías de antes.",
-  "Hazte una foto haciéndole una foto al fotógrafo.",
-  "Dibuja la boda en 3 trazos en una servilleta y sube la foto.",
-  "Graba un vídeo de 15 segundos contando una anécdota divertida de Sergio que Cristina no conozca.",
-  "Con los novios: saca a bailar a Cristina 20 segundos para darle la bienvenida a la familia (vídeo).",
-  "Con los novios: pregúntale a Cristina qué es lo que más le gusta de la familia de Sergio y graba su respuesta.",
-  "Foto de toda la mesa imitando una foto antigua de familia, todos muy serios.",
-  "Vídeo de toda la mesa haciendo la ola."],
+  "Hazte una foto con alguien a quien acabes de conocer hoy.",
+  "Consigue que alguien te baile una canción (vídeo).",
+  "Consigue que tres personas hagan contigo una pose de modelo.",
+  "Encuentra a alguien que tenga una foto antigua de la novia en el móvil y hazle una foto.",
+  "Pregúntale a alguien por su recuerdo favorito con la novia y graba su respuesta.",
+  "Échate un pulso con el padrino (vídeo).",
+  "Con los novios: hazte una foto con los novios formando un corazón con las manos.",
+  "Con los novios: saca a bailar a Sergio 20 segundos (vídeo).",
+  "Foto de toda la mesa haciendo un corazón con las manos.",
+  "Cara de póker: foto de 5 personas de la mesa mirando a cámara sin sonreír."],
  3:[
-  "Hazte una foto junto a un padrino copiando su pose.",
-  "Encuentra a la persona más mayor de la boda y hazte una foto con ella.",
-  "Hazte un selfie con 3 personas en la misma foto, una de cada una de las otras mesas.",
-  "Hazte una foto con el DJ.",
-  "Consigue que el DJ ponga una canción de verbena y saca a bailar a alguien de la familia (vídeo).",
-  "Escribe una dedicatoria para los novios en una servilleta y sube la foto.",
-  "Con los novios: enséñale a Cristina un baile de moda y graba cómo lo baila.",
-  "Con los novios: pregúntales qué significan 3 palabras que usan los jóvenes (por ejemplo, «cringe») y graba sus respuestas.",
-  "Foto de toda la mesa posando como un grupo de música de los 80.",
-  "Vídeo de toda la mesa bailando en la pista con al menos una persona de otra mesa."],
+  "Hazte una foto con tres personas poniendo la misma cara.",
+  "Haz que tres personas brinden contigo (foto).",
+  "Convence a alguien para hacerse una foto contigo sin explicarle por qué.",
+  "Consigue que alguien grite «¡Vivan los novios!» (vídeo).",
+  "Hazte una foto imitando a la novia.",
+  "Hazte una foto con una pareja que lleve muchos años casada.",
+  "Con los novios: consigue que la novia diga una palabra que hayáis elegido en la mesa, sin pedírselo directamente (vídeo).",
+  "Con los novios: consigue que Sergio te enseñe su mejor paso de baile (vídeo).",
+  "La peor foto posible: haced a propósito la foto más horrible de la boda.",
+  "Foto congelada: toda la mesa quieta como si se hubiera parado el tiempo."],
  4:[
-  "Hazte una foto junto a una madrina copiando su pose.",
-  "Encuentra a quien conoce a Sergio desde hace más años y hazte una foto con esa persona.",
-  "Consigue una servilleta con una dedicatoria escrita por alguien de una de las dos familias.",
-  "Hazte una foto con alguien del personal de cocina o sala.",
-  "Dibuja a los padrinos en una servilleta y sube la foto.",
-  "Graba un vídeo de 15 segundos con una predicción para los novios dentro de 20 años.",
-  "Con los novios: enséñale a Sergio un paso de baile y grabad cómo lo bailáis juntos.",
-  "Con los novios: pregúntales dónde fue su primera cita y graba su respuesta.",
-  "Foto de toda la mesa con disfraces improvisados hechos con servilletas.",
-  "Vídeo de toda la mesa coreando un nombre de pareja inventado para los novios."]
+  "Hazte una foto con alguien que lleve el mismo color que tú.",
+  "Encuentra a alguien con una anécdota graciosa de la novia y graba cómo la cuenta.",
+  "Haz que alguien de otra mesa te acompañe a brindar (foto).",
+  "Encuentra a alguien que conozca a la novia desde hace más de 10 años y hazte una foto con esa persona.",
+  "Consigue que alguien escriba una frase para los novios y sube la foto.",
+  "Encuentra a la persona que haya viajado desde más lejos y hazte una foto con ella.",
+  "Con los novios: haz reír a la novia (vídeo).",
+  "Con los novios: pregúntale a Sergio qué fue lo primero que le enamoró de Cristina y graba su respuesta.",
+  "Arrancad un aplauso de la nada y conseguid que se una todo el salón (vídeo).",
+  "Reunid a 5 personas que tengan algo en común y haceos una foto (contad qué es)."]
 };
 const RETO_FINAL = "Foto de todos los invitados juntos con los novios en el centro, y después un grito conjunto de «¡Vivan los novios!» grabado en vídeo.";
 
@@ -308,7 +326,11 @@ function completados(m){
 }
 const totalRetos = () => 10 + (S.finalAbierto ? 1 : 0);
 const misVotos = () => yo ? S.votos.filter(v=>v.jugador_id===yo.id) : [];
-const votosDe = id => S.votos.filter(v=>v.prueba_id===id).length;
+const esVotoNovios = v => S.jugadores[v.jugador_id]?.mesa===0;
+const votosDe = id => S.votos.filter(v=>v.prueba_id===id && !esVotoNovios(v)).length; // solo invitados
+const votosNov = id => S.votos.filter(v=>v.prueba_id===id && esVotoNovios(v)).length;
+const maxHearts = () => yo?.mesa===0 ? 10 : MAX_HEARTS;
+let filtroMesa = "todas";
 const mediaTag = (p, cls="media") => p.es_video
   ? `<video class="${cls}" src="${fotoURL(p.foto_path)}#t=0.1" preload="metadata" controls playsinline></video>`
   : `<img class="${cls}" src="${fotoURL(p.foto_path)}" alt="" loading="lazy">`;
@@ -394,12 +416,17 @@ async function pedirReto(retoId){
   refrescar("reclamos");
 }
 async function votar(pruebaId){
+  if(yo.mesa===0 && misVotos().some(v=>v.prueba_id===pruebaId)){
+    const {error} = await sb.rpc("quitar_voto",{p_prueba:pruebaId, p_token:yo.token});
+    toast(error ? "No se ha podido quitar" : "Corazón devuelto");
+    await cargar("votos"); render(); return;
+  }
   const {error} = await sb.from("votos").insert({jugador_id:yo.id, prueba_id:pruebaId});
   if(error){
     const msg = error.message||"";
-    toast(msg.includes("propia mesa") ? "No puedes votar a tu propia mesa" : msg.includes("3 corazones") ? "Ya has usado tus 3 corazones" : msg.includes("duplicate") ? "Ya le has dado tu corazón" : "No se ha podido votar");
-  } else toast("❤ Corazón enviado");
-  refrescar("votos");
+    toast(msg.includes("propia mesa") ? "No puedes votar a tu propia mesa" : msg.includes("corazones") ? `Ya has usado tus ${maxHearts()} corazones` : msg.includes("duplicate") ? "Ya le has dado tu corazón" : "No se ha podido votar");
+  } else toast(yo.mesa===0 ? "💛 ¡Favorita!" : "❤ Corazón enviado");
+  await cargar("votos"); render();
 }
 
 /* ============ VISTAS ============ */
@@ -422,7 +449,41 @@ const COUPLE_SVG = `
   </g>
 </svg>`;
 
+function vistaBienvenidaNovios(){
+  const fl = [["♥",8,0],["♪",78,1.2],["♥",62,2.6],["♫",18,3.4],["♥",88,4.3]].map(([c,x,d])=>`<span class="float" style="left:${x}%;animation-delay:${4.8+d}s;color:${c==="♥"?"#D99A8A":"#B08D52"}">${c}</span>`).join("");
+  return `
+  <section class="welcome intro" onclick="this.classList.add('skip')">
+    <div class="nv-stage">${COUPLE_SVG}${fl}</div>
+    <h1 class="names rv" style="--r:4.1s">Cristina<span class="amp">&amp;</span>Sergio</h1>
+    <div class="date rv" style="--r:4.3s">Sábado, 3 de octubre de 2026</div>
+    <p class="nv-sub rv" style="--r:4.7s">Esta noche vuestros invitados tienen retos… y todo lo que hagan acabará aquí, solo para vosotros.</p>
+    <div class="rv" style="--r:5.2s;margin-top:22px"><button class="btn block gold go" onclick="yo?entrarJuego():paso('nombre')">Ver nuestras fotos</button></div>
+  </section>`;
+}
+function entrarJuego(){ fase="juego"; tab="galeria"; render(); scrollTo(0,0); }
+function vistaNombreNovios(){
+  return `
+  <section class="ask">
+    <h2>¿Quién eres?</h2>
+    <p>Cada uno tendrá sus 10 corazones.</p>
+    <div class="who">
+      <button class="btn" onclick="altaNovios('Cristina','la novia')">Soy Cristina</button>
+      <button class="btn" onclick="altaNovios('Sergio','el novio')">Soy Sergio</button>
+    </div>
+    <p style="margin-top:18px">¿Padrino o madrina? Escribe tu nombre:</p>
+    <input class="field" id="inNombre" maxlength="40" autocomplete="given-name" placeholder="Tu nombre">
+    <button class="btn ghost block" id="bNombre" onclick="guardarNombre()">Entrar</button>
+  </section>`;
+}
+async function altaNovios(nombre, rel){
+  document.querySelectorAll(".ask button").forEach(b=>b.disabled=true);
+  const {data,error} = await sb.rpc("alta_jugador",{p_nombre:nombre, p_parentesco:rel, p_mesa:0});
+  if(error){ document.querySelectorAll(".ask button").forEach(b=>b.disabled=false); toast("No se ha podido entrar. Comprueba el wifi."); return; }
+  yo = data; localStorage.setItem("boda_cs_jugador", JSON.stringify(yo));
+  await cargar(); tab="galeria"; fase="juego"; render(); scrollTo(0,0);
+}
 function vistaBienvenida(){
+  if(esNoviosURL) return vistaBienvenidaNovios();
   return `
   <section class="welcome intro" onclick="this.classList.add('skip')">
     ${COUPLE_SVG}
@@ -473,7 +534,7 @@ function cabecera(){
     <div class="me"><b>${esc(yo.nombre)}</b>, ${esc(yo.parentesco)} · ${yo.mesa===0 ? MESAS[0] : `Mesa ${yo.mesa}, ${MESAS[yo.mesa]}`}</div>
   </header>
   <nav class="tabs" role="tablist">
-    ${(yo.mesa===0 ? [["galeria","Galería"],["ranking","Ranking"]] : [["retos","Mi mesa"],["ranking","Ranking"],["galeria","Galería"]]).map(([k,l])=>`<button role="tab" aria-selected="${tab===k}" onclick="tab='${k}';render();scrollTo(0,0)">${l}</button>`).join("")}
+    ${(yo.mesa===0 ? [["galeria","Todas"],["favoritas","Favoritas"],["ranking","Ranking"]] : [["retos","Mi mesa"],["ranking","Ranking"],["galeria","Galería"]]).map(([k,l])=>`<button role="tab" aria-selected="${tab===k}" onclick="tab='${k}';render();scrollTo(0,0)">${l}</button>`).join("")}
   </nav>`;
 }
 
@@ -554,31 +615,64 @@ function vistaRanking(){
     </div>`;
 }
 
-function vistaGaleria(){
-  const lista = pruebasValidas();
-  const quedan = MAX_HEARTS - misVotos().length;
-  const votadas = new Set(misVotos().map(v=>v.prueba_id));
+const HEART_SVG = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.1 4.3 2.4.7-1.3 2.2-2.4 4.3-2.4 3.7 0 5.8 3.9 4.3 7.2C19.5 16.4 12 21 12 21z"/></svg>`;
+function top5Ids(){
+  return new Set(pruebasValidas().map(p=>({id:p.id,v:votosDe(p.id)})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).slice(0,5).map(x=>x.id));
+}
+function fotoCard(p, top5){
+  const j = S.jugadores[p.jugador_id];
   const jurado = yo.mesa===0;
-  const top5 = new Set(lista.map(p=>({id:p.id,v:votosDe(p.id)})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).slice(0,5).map(x=>x.id));
-  const heart = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.1 4.3 2.4.7-1.3 2.2-2.4 4.3-2.4 3.7 0 5.8 3.9 4.3 7.2C19.5 16.4 12 21 12 21z"/></svg>`;
+  const votadas = new Set(misVotos().map(v=>v.prueba_id));
+  const quedan = maxHearts() - misVotos().length;
+  const mia = votadas.has(p.id), nv = votosNov(p.id);
+  let btn;
+  if(jurado){
+    btn = `<button class="heart gold ${mia?"on":""}" ${(!mia&&quedan<=0)?"disabled":""} onclick="votar('${p.id}')" aria-label="${mia?"Quitar corazón":"Dar un corazón"}">${HEART_SVG}${nv}<span class="sub">· ❤ ${votosDe(p.id)}</span></button>`;
+  } else {
+    const propia = p.mesa===yo.mesa, dis = propia || mia || quedan<=0;
+    btn = `<button class="heart ${mia?"on":""}" ${dis?"disabled":""} onclick="votar('${p.id}')" aria-label="${propia?"Es de tu mesa":"Dar un corazón"}">${HEART_SVG}${votosDe(p.id)}</button>`;
+  }
+  const chips = (jurado&&top5.has(p.id)?`<span class="chip ok" style="margin:4px 6px 0 0;display:inline-block">★ Top 5</span>`:"") + (nv>0?`<span class="fav-chip">💛 Favorita de los novios</span>`:"");
+  return `<figure class="photo" style="margin:0 0 16px">
+    ${mediaTag(p)}
+    <figcaption class="cap">
+      <div><div class="by">${esc(j?.nombre||"Invitado")}</div><div class="rel">${esc(j?.parentesco||"")} · ${MESAS[p.mesa]||""}</div>${chips}</div>
+      ${btn}
+      <div class="rt">${esc(textoReto(p.reto_id))}</div>
+      ${p.jugador_id===yo.id?`<button class="del-link" onclick="borrarMia('${p.id}')">Borrar mi foto</button>`:""}
+    </figcaption>
+  </figure>`;
+}
+function vistaGaleria(){
+  const jurado = yo.mesa===0;
+  let lista = pruebasValidas();
+  const quedan = maxHearts() - misVotos().length;
+  const top5 = top5Ids();
+  if(!jurado){
+    return `<div class="hearts-left">Te quedan <b>${quedan} de ${MAX_HEARTS}</b> corazones. Úsalos en las fotos de otras mesas que más te gusten.</div>
+    ${lista.length===0 ? `<div class="empty">Todavía no hay fotos.<br>¿Quién se estrena?</div>` : lista.map(p=>fotoCard(p,top5)).join("")}`;
+  }
+  const total = lista.length;
+  if(filtroMesa!=="todas") lista = lista.filter(p=>p.mesa===Number(filtroMesa));
+  const fb = [["todas",`Todas (${total})`],...[1,2,3,4,0].map(m=>[String(m), m===0?"Vuestra mesa":MESAS[m]])];
   return `
-    ${jurado
-      ? `<div class="notice">Vosotros sois el <b>jurado</b>: al final de la noche elegís la foto más graciosa entre las <b>5 con más corazones</b>, que aparecen marcadas con ★.</div>${tarjetaLibre()}`
-      : `<div class="hearts-left">Te quedan <b>${quedan} de ${MAX_HEARTS}</b> corazones. Úsalos en las fotos de otras mesas que más te gusten.</div>`}
-    ${lista.length===0 ? `<div class="empty">Todavía no hay fotos.<br>¿Quién se estrena?</div>` :
-      lista.map(p=>{
-        const j = S.jugadores[p.jugador_id];
-        const propia = p.mesa===yo.mesa, mia = votadas.has(p.id);
-        const dis = jurado || propia || mia || quedan<=0;
-        return `<figure class="photo" style="margin:0 0 16px">
-          ${mediaTag(p)}
-          <figcaption class="cap">
-            <div><div class="by">${esc(j?.nombre||"Invitado")}</div><div class="rel">${esc(j?.parentesco||"")} · ${MESAS[p.mesa]||""}</div>${jurado&&top5.has(p.id)?`<span class="chip ok" style="margin-top:4px;display:inline-block">★ Top 5</span>`:""}</div>
-            <button class="heart ${mia?"on":""}" ${dis?"disabled":""} onclick="votar('${p.id}')" aria-label="${propia?"Es de tu mesa":"Dar un corazón"}">${heart}${votosDe(p.id)}</button>
-            <div class="rt">${esc(textoReto(p.reto_id))}</div>
-            ${p.jugador_id===yo.id?`<button class="del-link" onclick="borrarMia('${p.id}')">Borrar mi foto</button>`:""}
-          </figcaption>
-        </figure>`;}).join("")}`;
+    <div class="hearts-left">Aquí está <b>todo</b> lo que suben vuestros invitados. Tenéis <b>${quedan} de 10</b> corazones dorados para marcar vuestras favoritas (si cambiáis de idea, tocad otra vez y os lo devuelve).</div>
+    <div class="filters">${fb.map(([k,l])=>`<button aria-pressed="${filtroMesa===k}" onclick="filtroMesa='${k}';render()">${esc(l)}</button>`).join("")}</div>
+    ${filtroMesa==="todas"||filtroMesa==="0" ? tarjetaLibre() : ""}
+    ${lista.length===0 ? `<div class="empty">Todavía no hay fotos aquí.<br>Ya llegarán…</div>` : lista.map(p=>fotoCard(p,top5)).join("")}
+    ${total ? `<div class="dl-card"><p>Guardad todas las fotos y vídeos de la noche en un solo archivo, ordenadas por mesa. Mejor con wifi.</p><button class="btn gold block" id="bZip" onclick="descargarTodo(true)">Descargar todas las fotos</button></div>` : ""}`;
+}
+function vistaFavoritas(){
+  const lista = pruebasValidas();
+  const favs = lista.map(p=>({p,v:votosNov(p.id)})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v);
+  const top = lista.map(p=>({p,v:votosDe(p.id)})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).slice(0,5);
+  const top5 = new Set(top.map(x=>x.p.id));
+  return `
+    <h2 class="section-title">Vuestras favoritas</h2>
+    ${favs.length ? favs.map(x=>fotoCard(x.p,top5)).join("") : `<div class="empty">Aún no habéis marcado ninguna.<br>Dadle 💛 en «Todas».</div>`}
+    <h2 class="section-title" style="margin-top:28px">Las 5 más votadas por los invitados</h2>
+    <div class="notice">De aquí sale el premio a la <b>foto más graciosa</b>: elegid vosotros la ganadora.</div>
+    ${top.length ? top.map(x=>fotoCard(x.p,top5)).join("") : `<div class="empty">Todavía no hay votos.</div>`}`;
 }
 
 /* ============ ADMIN ============ */
@@ -593,12 +687,13 @@ async function adminCall(fn, args){
   if(error) toast("Error: "+error.message); else toast("Hecho");
   await cargar(); render();
 }
-async function descargarTodo(){
+async function descargarTodo(soloValidas){
   const btn = $("#bZip"); btn.disabled = true;
   if(!window.JSZip){ await new Promise((ok,ko)=>{const s=document.createElement("script"); s.src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"; s.onload=ok; s.onerror=ko; document.head.appendChild(s);}); }
   const zip = new JSZip(); let i=0;
-  for(const p of S.pruebas){
-    i++; btn.textContent = `Descargando ${i}/${S.pruebas.length}…`;
+  const todas = soloValidas ? pruebasValidas() : S.pruebas;
+  for(const p of todas){
+    i++; btn.textContent = `Descargando ${i}/${todas.length}…`;
     try{
       const b = await (await fetch(fotoURL(p.foto_path))).blob();
       const j = S.jugadores[p.jugador_id];
@@ -642,7 +737,9 @@ function paso(f){ fase=f; render(); scrollTo(0,0); setTimeout(()=>{ const i=docu
 function guardarNombre(){
   const v = $("#inNombre").value.trim();
   if(!v){ toast("Escribe tu nombre"); return; }
-  tmpNombre = v.charAt(0).toUpperCase()+v.slice(1); paso("parentesco");
+  tmpNombre = v.charAt(0).toUpperCase()+v.slice(1);
+  if(esNoviosURL){ altaNovios(tmpNombre, "de la mesa de los novios"); return; }
+  paso("parentesco");
 }
 async function guardarJugador(){
   const rel = $("#inRel").value.trim();
@@ -663,12 +760,12 @@ document.addEventListener("keydown", e=>{
 function render(){
   const app = $("#app");
   if(isAdmin){ app.innerHTML = vistaAdmin(); return; }
-  if(yo && fase!=="juego") fase = "juego";
+  if(yo && fase!=="juego" && !esNoviosURL) fase = "juego";
   if(fase==="juego" && yo){
     if(yo.mesa===0 && tab==="retos") tab="galeria";
     app.dataset.k = "";
     if(!S.loaded){ app.innerHTML = cabecera() + `<div class="empty">Cargando…</div>`; return; }
-    app.innerHTML = cabecera() + (tab==="retos"?vistaRetos():tab==="ranking"?vistaRanking():vistaGaleria());
+    app.innerHTML = cabecera() + (tab==="retos"?vistaRetos():tab==="ranking"?vistaRanking():tab==="favoritas"?vistaFavoritas():vistaGaleria());
     return;
   }
   // Antes de entrar al juego no se repinta con los datos en directo:
@@ -677,7 +774,7 @@ function render(){
   if(app.dataset.k===k) return;
   app.dataset.k = k;
   if(!esNoviosURL && (!mesaURL || !MESAS[mesaURL])){ app.innerHTML = vistaElegirMesa(); return; }
-  app.innerHTML = fase==="nombre"?vistaNombre():fase==="parentesco"?vistaParentesco():vistaBienvenida();
+  app.innerHTML = fase==="nombre"?(esNoviosURL?vistaNombreNovios():vistaNombre()):fase==="parentesco"?vistaParentesco():vistaBienvenida();
 }
 
 (async function init(){
